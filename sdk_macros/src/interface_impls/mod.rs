@@ -6,12 +6,12 @@
 // === Standard Interfaces ===
 
 pub mod single_task;       // #[single_task_plugin_impl]
+pub mod async_task;        // #[async_task_plugin_impl]
+pub mod resident;          // #[resident_plugin_impl]
+pub mod state;             // #[state_plugin_impl]
 pub mod manager;           // #[manager_plugin_impl]
 
 // TODO: Implement these interface macros
-// pub mod async_task;        // #[async_task_plugin_impl]
-// pub mod resident;          // #[resident_plugin_impl]
-// pub mod state;             // #[state_plugin_impl]
 // pub mod data_input;        // #[data_input_plugin_impl]
 // pub mod data_output;       // #[data_output_plugin_impl]
 // pub mod window;            // #[window_plugin_impl]
@@ -40,19 +40,19 @@ pub mod manager;           // #[manager_plugin_impl]
 
 /// Re-export the single_task implementation function for use in lib.rs
 pub use single_task::process_single_task_impl_attribute;
+pub use async_task::process_async_task_impl_attribute;
+pub use resident::process_resident_impl_attribute;
+pub use state::process_state_impl_attribute;
 pub use manager::process_manager_impl_attribute;
 
 // TODO: Re-export other interface implementation functions as they are implemented
-// pub use async_task::process_async_task_impl_attribute;
-// pub use resident::process_resident_impl_attribute;
-// pub use state::process_state_impl_attribute;
 // pub use data_input::process_data_input_impl_attribute;
 // pub use data_output::process_data_output_impl_attribute;
 // pub use window::process_window_impl_attribute;
-// pub use http_client::process_http_client_impl_attribute;
 // pub use image::process_image_impl_attribute;
 // pub use audio::process_audio_impl_attribute;
 // pub use video::process_video_impl_attribute;
+// pub use http_client::process_http_client_impl_attribute;
 // pub use file_system::process_file_system_impl_attribute;
 // pub use database::process_database_impl_attribute;
 // pub use encryption::process_encryption_impl_attribute;

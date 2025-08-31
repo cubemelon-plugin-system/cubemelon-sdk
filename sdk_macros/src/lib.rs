@@ -140,23 +140,36 @@ pub fn single_task_plugin_impl(_args: TokenStream, input: TokenStream) -> TokenS
     }
 }
 
-// Future interface-specific macros can be added here:
-// 
-// #[proc_macro_attribute] 
-// pub fn async_task_plugin_impl(args: TokenStream, input: TokenStream) -> TokenStream {
-//     // Implementation for async task interface
-// }
-// 
-// #[proc_macro_attribute]
-// pub fn resident_plugin_impl(args: TokenStream, input: TokenStream) -> TokenStream {
-//     // Implementation for resident interface
-// }
-// 
-// #[proc_macro_attribute]
-// pub fn state_plugin_impl(args: TokenStream, input: TokenStream) -> TokenStream {
-//     // Implementation for state management interface
-// }
-// 
+#[proc_macro_attribute] 
+pub fn async_task_plugin_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_impl = parse_macro_input!(input as ItemImpl);
+    
+    match crate::interface_impls::process_async_task_impl_attribute(input_impl) {
+        Ok(tokens) => tokens.into(),
+        Err(err) => err.to_compile_error().into(),
+    }
+}
+
+#[proc_macro_attribute]
+pub fn resident_plugin_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_impl = parse_macro_input!(input as ItemImpl);
+    
+    match crate::interface_impls::process_resident_impl_attribute(input_impl) {
+        Ok(tokens) => tokens.into(),
+        Err(err) => err.to_compile_error().into(),
+    }
+}
+
+#[proc_macro_attribute]
+pub fn state_plugin_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
+    let input_impl = parse_macro_input!(input as ItemImpl);
+    
+    match crate::interface_impls::process_state_impl_attribute(input_impl) {
+        Ok(tokens) => tokens.into(),
+        Err(err) => err.to_compile_error().into(),
+    }
+}
+
 #[proc_macro_attribute]
 pub fn manager_plugin_impl(_args: TokenStream, input: TokenStream) -> TokenStream {
     let input_impl = parse_macro_input!(input as ItemImpl);
@@ -166,11 +179,6 @@ pub fn manager_plugin_impl(_args: TokenStream, input: TokenStream) -> TokenStrea
         Err(err) => err.to_compile_error().into(),
     }
 }
-
-// #[proc_macro_attribute]
-// pub fn http_client_plugin_impl(args: TokenStream, input: TokenStream) -> TokenStream {
-//     // Implementation for HTTP client interface
-// }
 
 #[cfg(test)]
 mod tests {
