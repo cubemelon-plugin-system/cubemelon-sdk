@@ -1,0 +1,40 @@
+[workspace]
+members = [
+    "sdk",
+    "sdk_macros",
+    #"runtime",
+    "plugins/*",
+    #"tools/*"
+]
+resolver = "2"
+
+[workspace.dependencies]
+proc-macro2 = "1.0"
+quote = "1.0"
+syn = { version = "2.0", features = ["full", "extra-traits"] }
+
+[workspace.package]
+version = "0.10.1"
+authors = ["tapetums"]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/cubemelon-plugin-system"
+homepage = "https://tapetums.github.io/cubemelon_plugin_system.html"
+documentation = "https://tapetums.github.io/cubemelon_plugin_system.html"
+readme = "README.md"
+keywords = ["plugin", "system", "c-abi", "dynamic", "extensible"]
+categories = ["development-tools", "api-bindings"]
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true
+
+[profile.dev]
+opt-level = 0
+debug = true
+
+[profile.bench]
+inherits = "release"
+debug = true

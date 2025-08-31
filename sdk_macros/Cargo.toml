@@ -1,0 +1,22 @@
+[package]
+name = "cubemelon_sdk_macros"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+# This is crucial for procedural macros!
+[lib]
+proc-macro = true
+
+[dependencies]
+# Procedural macro essentials
+syn = { version = "2.0", features = ["full", "extra-traits"] }
+quote = "1.0"
+proc-macro2 = "1.0"
