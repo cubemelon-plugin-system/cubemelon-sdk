@@ -153,13 +153,27 @@ pub extern "C" fn create_plugin() -> *mut CubeMelonPlugin {
 
 /// C ABI: Get plugin interface
 #[no_mangle]
-pub extern "C" fn get_plugin_interface(plugin: *const CubeMelonPlugin) -> *const CubeMelonInterface {
-    if plugin.is_null() {
-        return std::ptr::null();
+pub extern "C" fn get_plugin_interface(
+    plugin_types: u64,
+    interface_version: u32,
+    interface: *mut *const std::ffi::c_void
+) -> CubeMelonPluginErrorCode {
+    if interface.is_null() {
+        return CubeMelonPluginErrorCode::NullPointer;
+    }
+
+    if plugin_types != 0 {
+        unsafe { *interface = std::ptr::null(); }
+        return CubeMelonPluginErrorCode::InterfaceNotSupported;
+    }
+
+    if interface_version != 1 {
+        unsafe { *interface = std::ptr::null(); }
+        return CubeMelonPluginErrorCode::InterfaceNotSupported;
     }
 
     // Create interface with our implementations
-    static INTERFACE: CubeMelonInterface = CubeMelonInterface {
+    const INTERFACE: CubeMelonInterface = CubeMelonInterface {
         get_uuid: get_plugin_uuid,
         get_version: get_plugin_version,
         get_supported_types: c_get_supported_types,
@@ -167,12 +181,15 @@ pub extern "C" fn get_plugin_interface(plugin: *const CubeMelonPlugin) -> *const
         get_thread_requirements: c_get_thread_requirements,
         get_name: c_get_name,
         get_description: c_get_description,
-        get_interface: c_get_interface,
         initialize: c_initialize,
         uninitialize: c_uninitialize,
     };
 
-    &INTERFACE
+    unsafe { 
+        *interface = &INTERFACE as *const CubeMelonInterface as *const std::ffi::c_void;
+    }
+
+    CubeMelonPluginErrorCode::Success
 }
 
 /// C ABI: Destroy plugin instance
@@ -217,25 +234,6 @@ extern "C" fn c_get_description(
     with_plugin::<Plugin, _, _>(plugin, |p| {
         p.get_description(language)
     }).unwrap_or(std::ptr::null())
-}
-
-extern "C" fn c_get_interface(
-    plugin: *mut CubeMelonPlugin,
-    plugin_types: u64,
-    plugin_version: u32,
-    interface: *mut *const std::ffi::c_void,
-) -> CubeMelonPluginErrorCode {
-    with_plugin::<Plugin, _, _>(plugin, |p| {
-        match p.get_interface(plugin_types, plugin_version) {
-            Ok(interface_ptr) => {
-                unsafe {
-                    *interface = interface_ptr;
-                }
-                CubeMelonPluginErrorCode::Success
-            }
-            Err(err) => err,
-        }
-    }).unwrap_or(CubeMelonPluginErrorCode::InterfaceNotSupported)
 }
 
 extern "C" fn c_initialize(
@@ -318,9 +316,6 @@ mod tests {
     fn test_plugin_lifecycle() {
         let plugin_ptr = create_plugin();
         assert!(!plugin_ptr.is_null());
-
-        let interface_ptr = get_plugin_interface(plugin_ptr);
-        assert!(!interface_ptr.is_null());
 
         destroy_plugin(plugin_ptr);
     }

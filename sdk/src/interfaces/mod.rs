@@ -47,15 +47,6 @@ pub struct CubeMelonInterface {
         language: CubeMelonLanguage,
     ) -> *const u8,
 
-    // === Capability Queries ===
-    /// Get a specific interface implementation
-    pub get_interface: extern "C" fn(
-        plugin: *mut CubeMelonPlugin,
-        plugin_types: u64,
-        plugin_version: u32,
-        interface: *mut *const std::ffi::c_void,
-    ) -> CubeMelonPluginErrorCode,
-
     // === Lifecycle Management ===
     /// Initialize the plugin
     pub initialize: extern "C" fn(
@@ -85,7 +76,6 @@ impl CubeMelonInterface {
             get_thread_requirements: default_get_thread_requirements,
             get_name: default_get_name,
             get_description: default_get_description,
-            get_interface: default_get_interface,
             initialize: default_initialize,
             uninitialize: default_uninitialize,
         }
@@ -126,18 +116,6 @@ extern "C" fn default_get_description(
     _language: CubeMelonLanguage,
 ) -> *const u8 {
     b"No description\0".as_ptr()
-}
-
-extern "C" fn default_get_interface(
-    _plugin: *mut CubeMelonPlugin,
-    _plugin_types: u64,
-    _plugin_version: u32,
-    interface: *mut *const std::ffi::c_void,
-) -> CubeMelonPluginErrorCode {
-    if !interface.is_null() {
-        unsafe { *interface = std::ptr::null(); }
-    }
-    CubeMelonPluginErrorCode::InterfaceNotSupported
 }
 
 extern "C" fn default_initialize(

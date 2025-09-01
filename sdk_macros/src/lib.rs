@@ -180,6 +180,60 @@ pub fn manager_plugin_impl(_args: TokenStream, input: TokenStream) -> TokenStrea
     }
 }
 
+/// Generate get_plugin_interface function for specified plugin interfaces
+/// 
+/// This macro generates the C ABI get_plugin_interface function that handles
+/// multiple plugin interface types. Use this after implementing the required
+/// interfaces with their respective macros.
+/// 
+/// # Example
+/// ```rust
+/// use cubemelon_sdk_macros::{plugin, plugin_impl, single_task_plugin_impl, plugin_interface};
+/// use cubemelon_sdk::prelude::*;
+/// 
+/// #[plugin]
+/// pub struct MyPlugin;
+/// 
+/// #[plugin_impl]
+/// impl MyPlugin {
+///     pub fn new() -> Self { Self }
+///     pub fn get_uuid() -> CubeMelonUUID { uuid!("...") }
+///     pub fn get_version() -> CubeMelonVersion { version!(1, 0, 0) }
+///     pub fn get_supported_types() -> u64 {
+///         (CubeMelonPluginType::Basic as u64) | (CubeMelonPluginType::SingleTask as u64)
+///     }
+/// }
+/// 
+/// #[single_task_plugin_impl]
+/// impl MyPlugin {
+///     pub fn execute(
+///         &mut self,
+///         request: &CubeMelonTaskRequest,
+///         result: &mut CubeMelonTaskResult,
+///     ) -> CubeMelonPluginErrorCode {
+///         CubeMelonPluginErrorCode::Success
+///     }
+/// }
+/// 
+/// // Generate get_plugin_interface that handles both Basic and SingleTask
+/// #[plugin_interface(single_task)]
+/// impl MyPlugin {}
+/// ```
+/// 
+/// # Supported interface types
+/// - `basic` - Basic plugin interface (always supported)
+/// - `single_task` - Synchronous task execution
+/// - `async_task` - Asynchronous task execution
+/// - `resident` - Background service functionality
+/// - `state` - State management
+/// - `manager` - Plugin management
+/// 
+/// Multiple interfaces can be specified: `#[plugin_interface(single_task, async_task)]`
+#[proc_macro_attribute]
+pub fn plugin_interface(args: TokenStream, input: TokenStream) -> TokenStream {
+    plugin::plugin_interface_attribute(args, input)
+}
+
 #[cfg(test)]
 mod tests {
     // Note: Testing procedural macros requires special setup

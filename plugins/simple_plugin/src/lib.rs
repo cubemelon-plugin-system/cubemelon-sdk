@@ -12,3 +12,6 @@ impl SimplePlugin {
     pub fn get_supported_types() -> u64 { CubeMelonPluginType::Basic as u64 }
     // Other methods are optional
 }
+
+#[plugin_interface(basic)]
+impl SimplePlugin {}

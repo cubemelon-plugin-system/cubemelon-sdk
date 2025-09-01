@@ -1,7 +1,7 @@
 # CubeMelon プラグインシステム 仕様書
 <div style="text-align: right;">
-2025/08/31<br>
-PLUGIN_SDK_VERSION 0.11.0
+2025/09/01<br>
+PLUGIN_SDK_VERSION 0.11.1
 </div>
 
 ---
@@ -476,14 +476,6 @@ typedef struct {
     const char8_t* (*get_description)(
         const CubeMelonPlugin* plugin,
         const CubeMelonLanguage language
-    );
-
-    // 機能クエリ
-    CubeMelonPluginErrorCode (*get_interface)(
-        CubeMelonPlugin* plugin,
-        CubeMelonPluginType plugin_types,
-        uint32_t interface_version,
-        const void** interface
     );
 
     // ライフサイクル管理
@@ -1022,8 +1014,12 @@ CubeMelonPluginType get_plugin_supported_types(void); // プラグインタイ�
 // プラグイン作成
 CubeMelonPlugin* create_plugin(void);
 
-// プラグインの基本インターフェイスを取得
-const CubeMelonInterface* get_plugin_interface(const CubeMelonPlugin* plugin);
+// プラグインのインターフェイスを取得
+CubeMelonPluginErrorCode get_plugin_interface(
+    CubeMelonPluginType plugin_types,
+    uint32_t interface_version,
+    const void** interface
+);
 
 // プラグイン破棄
 void destroy_plugin(CubeMelonPlugin* plugin);
@@ -1401,15 +1397,13 @@ pub struct MyPlugin {
 #[plugin_impl]
 impl MyPlugin {
     pub fn new() -> Self { Self {} }
-    
-    pub fn get_uuid() -> CubeMelonUUID {
-        uuid!("12345678-1234-5678-9abc-123456789abc")
-    }
-    
-    pub fn get_version() -> CubeMelonVersion {
-        version!(1, 0, 0)
-    }
+    pub fn get_uuid() -> CubeMelonUUID { uuid!("12345678-1234-5678-9abc-123456789abc") }
+    pub fn get_version() -> CubeMelonVersion { version!(1, 0, 0) }
+    pub fn get_supported_types() -> u64 { CubeMelonPluginType::Basic as u64 }
 }
+
+#[plugin_interface(basic)]
+impl SimplePlugin {}
 ```
 
 ### 9.2 単発実行プラグイン
@@ -1502,6 +1496,9 @@ impl MyPlugin {
         CubeMelonPluginErrorCode::Success
     }
 }
+
+#[plugin_interface(single_task)]
+impl Plugin {}
 ```
 
 [目次に戻る](#目次)
@@ -1620,6 +1617,9 @@ impl MySimpleManager {
         self.basic.execute_default_task(task)  // 標準処理に委譲
     }
 }
+
+#[plugin_interface(manager)]
+impl Plugin {}
 ```
 
 [目次に戻る](#目次)
@@ -1796,6 +1796,10 @@ impl MyPlugin {
         CubeMelonPluginErrorCode::Success
     }
 }
+
+#[plugin_interface(single_task)]
+impl Plugin {}
+
 ```
 
 ### 12.5 ログの利点
@@ -1869,6 +1873,9 @@ impl MyPlugin {
         multilang_map!(language, "A sample plugin", {})
     }
 }
+
+#[plugin_interface(basic)]
+impl Plugin {}
 
 // マクロが以下を自動生成:
 // - create_plugin() / destroy_plugin()

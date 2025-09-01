@@ -230,7 +230,6 @@ struct PluginMethods {
     get_thread_requirements_method: Option<syn::ImplItemFn>,
     get_name_method: Option<syn::ImplItemFn>,
     get_description_method: Option<syn::ImplItemFn>,
-    get_interface_method: Option<syn::ImplItemFn>,
     initialize_method: Option<syn::ImplItemFn>,
     uninitialize_method: Option<syn::ImplItemFn>,
     
@@ -288,7 +287,6 @@ fn parse_plugin_methods(input: &ItemImpl) -> Result<PluginMethods, syn::Error> {
         get_thread_requirements_method: None,
         get_name_method: None,
         get_description_method: None,
-        get_interface_method: None,
         initialize_method: None,
         uninitialize_method: None,
         new_method: None,
@@ -307,7 +305,6 @@ fn parse_plugin_methods(input: &ItemImpl) -> Result<PluginMethods, syn::Error> {
                 "get_thread_requirements" => methods.get_thread_requirements_method = Some(method.clone()),
                 "get_name" => methods.get_name_method = Some(method.clone()),
                 "get_description" => methods.get_description_method = Some(method.clone()),
-                "get_interface" => methods.get_interface_method = Some(method.clone()),
                 "initialize" => methods.initialize_method = Some(method.clone()),
                 "uninitialize" => methods.uninitialize_method = Some(method.clone()),
                 "new" => methods.new_method = Some(method.clone()),
@@ -393,16 +390,6 @@ fn generate_plugin_base_impl(
         quote! { b"No description\0".as_ptr() } // Default description
     };
 
-    let get_interface_impl = if let Some(method) = &methods.get_interface_method {
-        let method_name = &method.sig.ident;
-        quote! { self.#method_name(plugin_types, interface_version) }
-    } else {
-        quote! {
-            // Default implementation - only supports basic interface
-            Err(::cubemelon_sdk::error::CubeMelonPluginErrorCode::InterfaceNotSupported)
-        }
-    };
-
     let initialize_impl = if let Some(method) = &methods.initialize_method {
         let method_name = &method.sig.ident;
         quote! { self.#method_name(host_plugin, host_interface, host_services) }
@@ -445,14 +432,6 @@ fn generate_plugin_base_impl(
 
             fn get_description(&self, language: ::cubemelon_sdk::types::CubeMelonLanguage) -> *const u8 {
                 #get_description_impl
-            }
-
-            fn get_interface(
-                &self,
-                plugin_types: u64,
-                interface_version: u32,
-            ) -> Result<*const std::ffi::c_void, ::cubemelon_sdk::error::CubeMelonPluginErrorCode> {
-                #get_interface_impl
             }
 
             fn initialize(
@@ -520,19 +499,6 @@ fn generate_c_abi_exports(
             ::cubemelon_sdk::instance::create_plugin_instance(plugin)
         }
 
-        /// C ABI: Get plugin interface
-        #[no_mangle]
-        pub extern "C" fn get_plugin_interface(
-            plugin: *const ::cubemelon_sdk::instance::CubeMelonPlugin
-        ) -> *const ::cubemelon_sdk::interfaces::CubeMelonInterface {
-            if plugin.is_null() {
-                return std::ptr::null();
-            }
-
-            // Return the generated static interface
-            &__CUBEMELON_GENERATED_INTERFACE
-        }
-
         /// C ABI: Destroy plugin instance
         #[no_mangle]
         pub extern "C" fn destroy_plugin(plugin: *mut ::cubemelon_sdk::instance::CubeMelonPlugin) {
@@ -572,7 +538,7 @@ fn generate_c_abi_interface(
 
     quote! {
         /// Generated static CubeMelonInterface structure
-        static __CUBEMELON_GENERATED_INTERFACE: ::cubemelon_sdk::interfaces::CubeMelonInterface = ::cubemelon_sdk::interfaces::CubeMelonInterface {
+        pub const __CUBEMELON_GENERATED_INTERFACE: ::cubemelon_sdk::interfaces::CubeMelonInterface = ::cubemelon_sdk::interfaces::CubeMelonInterface {
             // Static methods - can call directly
             get_uuid: get_plugin_uuid,
             get_version: get_plugin_version,
@@ -585,7 +551,6 @@ fn generate_c_abi_interface(
             // Instance methods - need wrapper functions
             get_name: __cubemelon_c_get_name,
             get_description: __cubemelon_c_get_description,
-            get_interface: __cubemelon_c_get_interface,
             initialize: __cubemelon_c_initialize,
             uninitialize: __cubemelon_c_uninitialize,
         };
@@ -689,47 +654,6 @@ fn generate_c_abi_wrappers(
         }
     };
 
-    // Generate get_interface method wrapper
-    let get_interface_wrapper = if let Some(method) = &methods.get_interface_method {
-        let method_name = &method.sig.ident;
-        quote! {
-            /// C ABI wrapper: Get interface (user implementation)
-            extern "C" fn __cubemelon_c_get_interface(
-                plugin: *mut ::cubemelon_sdk::instance::CubeMelonPlugin,
-                plugin_types: u64,
-                interface_version: u32,
-                interface: *mut *const std::ffi::c_void,
-            ) -> ::cubemelon_sdk::error::CubeMelonPluginErrorCode {
-                if plugin.is_null() || interface.is_null() {
-                    return ::cubemelon_sdk::error::CubeMelonPluginErrorCode::NullPointer;
-                }
-
-                ::cubemelon_sdk::instance::with_plugin::<#struct_name, _, _>(plugin, |p| {
-                    match p.#method_name(plugin_types, interface_version) {
-                        Ok(interface_ptr) => {
-                            unsafe {
-                                *interface = interface_ptr;
-                            }
-                            ::cubemelon_sdk::error::CubeMelonPluginErrorCode::Success
-                        }
-                        Err(err) => err,
-                    }
-                }).unwrap_or(::cubemelon_sdk::error::CubeMelonPluginErrorCode::PluginNotFound)
-            }
-        }
-    } else {
-        quote! {
-            /// C ABI wrapper: Get interface (default implementation)
-            extern "C" fn __cubemelon_c_get_interface(
-                _plugin: *mut ::cubemelon_sdk::instance::CubeMelonPlugin,
-                _plugin_types: u64,
-                _interface_version: u32,
-                _interface: *mut *const std::ffi::c_void,
-            ) -> ::cubemelon_sdk::error::CubeMelonPluginErrorCode {
-                ::cubemelon_sdk::error::CubeMelonPluginErrorCode::InterfaceNotSupported
-            }
-        }
-    };
 
     // Generate initialize method wrapper
     let initialize_wrapper = if let Some(method) = &methods.initialize_method {
@@ -822,7 +746,6 @@ fn generate_c_abi_wrappers(
         #get_thread_requirements_wrapper
         #name_wrapper
         #description_wrapper
-        #get_interface_wrapper
         #initialize_wrapper
         #uninitialize_wrapper
     }
@@ -882,7 +805,7 @@ mod tests {
         assert!(methods.get_uuid_method.is_some());
         assert!(methods.get_version_method.is_some());
         assert!(methods.get_supported_types_method.is_some());
-        assert!(methods.get_interface_method.is_none()); // Optional method not provided
+        assert!(methods.get_name_method.is_none()); // Optional method not provided
     }
 
     #[test]
@@ -898,5 +821,194 @@ mod tests {
         
         let methods = parse_plugin_methods(&input);
         assert!(methods.is_err());
+    }
+}
+
+/// Generate get_plugin_interface function for specified interfaces
+pub fn plugin_interface_attribute(args: TokenStream, input: TokenStream) -> TokenStream {
+    let args = parse_macro_input!(args as AttributeArgs);
+    let input_item = parse_macro_input!(input as syn::Item);
+    
+    // Extract struct name from the input (should be an impl block)
+    let struct_name = match &input_item {
+        syn::Item::Impl(item_impl) => {
+            match &*item_impl.self_ty {
+                syn::Type::Path(type_path) => {
+                    if let Some(segment) = type_path.path.segments.last() {
+                        &segment.ident
+                    } else {
+                        return syn::Error::new_spanned(
+                            &item_impl.self_ty,
+                            "Could not determine struct name from impl block"
+                        )
+                        .to_compile_error()
+                        .into();
+                    }
+                }
+                _ => {
+                    return syn::Error::new_spanned(
+                        &item_impl.self_ty,
+                        "#[plugin_interface] can only be applied to impl blocks for named structs"
+                    )
+                    .to_compile_error()
+                    .into();
+                }
+            }
+        }
+        _ => {
+            return syn::Error::new_spanned(
+                &input_item,
+                "#[plugin_interface] can only be applied to impl blocks"
+            )
+            .to_compile_error()
+            .into();
+        }
+    };
+    
+    // Parse interface list from args
+    let mut interfaces = Vec::new();
+    for arg in args {
+        match arg {
+            NestedMeta::Meta(Meta::Path(path)) => {
+                if let Some(ident) = path.get_ident() {
+                    interfaces.push(ident.to_string());
+                }
+            }
+            _ => {
+                return syn::Error::new_spanned(
+                    &input_item,
+                    "Expected interface names like: #[plugin_interface(single_task, async_task)]"
+                )
+                .to_compile_error()
+                .into();
+            }
+        }
+    }
+    
+    // Generate get_plugin_interface function
+    let interface_handlers = generate_interface_handlers(struct_name, &interfaces);
+    
+    let result = quote! {
+        #input_item
+        
+        #interface_handlers
+    };
+    
+    result.into()
+}
+
+/// Generate interface handler code for get_plugin_interface
+fn generate_interface_handlers(struct_name: &syn::Ident, interfaces: &[String]) -> TokenStream2 {
+    let mut interface_checks = Vec::new();
+    
+    // Generate handlers for each specified interface
+    for interface in interfaces {
+        match interface.as_str() {
+            "single_task" => {
+                interface_checks.push(quote! {
+                    // Handle SingleTask interface
+                    if (plugin_types & (CubeMelonPluginType::SingleTask as u64)) != 0 {
+                        let single_task_interface = ::cubemelon_sdk::interfaces::single_task::create_single_task_interface::<#struct_name>();
+                        let boxed_interface = Box::new(single_task_interface);
+                        unsafe {
+                            *interface = Box::into_raw(boxed_interface) as *const std::ffi::c_void;
+                        }
+                        return ::cubemelon_sdk::error::CubeMelonPluginErrorCode::Success;
+                    }
+                });
+            }
+            "async_task" => {
+                interface_checks.push(quote! {
+                    // Handle AsyncTask interface
+                    if (plugin_types & (CubeMelonPluginType::AsyncTask as u64)) != 0 {
+                        let async_task_interface = ::cubemelon_sdk::interfaces::async_task::create_async_task_interface::<#struct_name>();
+                        let boxed_interface = Box::new(async_task_interface);
+                        unsafe {
+                            *interface = Box::into_raw(boxed_interface) as *const std::ffi::c_void;
+                        }
+                        return ::cubemelon_sdk::error::CubeMelonPluginErrorCode::Success;
+                    }
+                });
+            }
+            "resident" => {
+                interface_checks.push(quote! {
+                    // Handle Resident interface
+                    if (plugin_types & (CubeMelonPluginType::Resident as u64)) != 0 {
+                        let resident_interface = ::cubemelon_sdk::interfaces::resident::create_resident_interface::<#struct_name>();
+                        let boxed_interface = Box::new(resident_interface);
+                        unsafe {
+                            *interface = Box::into_raw(boxed_interface) as *const std::ffi::c_void;
+                        }
+                        return ::cubemelon_sdk::error::CubeMelonPluginErrorCode::Success;
+                    }
+                });
+            }
+            "state" => {
+                interface_checks.push(quote! {
+                    // Handle State interface
+                    if (plugin_types & (CubeMelonPluginType::State as u64)) != 0 {
+                        let state_interface = ::cubemelon_sdk::interfaces::state::create_state_interface::<#struct_name>();
+                        let boxed_interface = Box::new(state_interface);
+                        unsafe {
+                            *interface = Box::into_raw(boxed_interface) as *const std::ffi::c_void;
+                        }
+                        return ::cubemelon_sdk::error::CubeMelonPluginErrorCode::Success;
+                    }
+                });
+            }
+            "manager" => {
+                interface_checks.push(quote! {
+                    // Handle Manager interface
+                    if (plugin_types & (CubeMelonPluginType::Manager as u64)) != 0 {
+                        let manager_interface = ::cubemelon_sdk::interfaces::manager::create_manager_interface::<#struct_name>();
+                        let boxed_interface = Box::new(manager_interface);
+                        unsafe {
+                            *interface = Box::into_raw(boxed_interface) as *const std::ffi::c_void;
+                        }
+                        return ::cubemelon_sdk::error::CubeMelonPluginErrorCode::Success;
+                    }
+                });
+            }
+            _ => {
+                // Ignore unknown interfaces for now (could add compile warning)
+            }
+        }
+    }
+    
+    quote! {
+        /// C ABI: Get plugin interface (generated by plugin_interface macro)
+        #[no_mangle]
+        pub extern "C" fn get_plugin_interface(
+            plugin_types: u64,
+            interface_version: u32,
+            interface: *mut *const std::ffi::c_void,
+        ) -> ::cubemelon_sdk::error::CubeMelonPluginErrorCode {
+            if interface.is_null() {
+                return ::cubemelon_sdk::error::CubeMelonPluginErrorCode::NullPointer;
+            }
+
+            // Check interface version (currently only version 1 is supported)
+            if interface_version != 1 {
+                unsafe { *interface = std::ptr::null(); }
+                return ::cubemelon_sdk::error::CubeMelonPluginErrorCode::VersionMismatch;
+            }
+
+            use ::cubemelon_sdk::types::CubeMelonPluginType;
+
+            #(#interface_checks)*
+
+            // Default: return the basic interface
+            if (plugin_types & (CubeMelonPluginType::Basic as u64)) != 0 || plugin_types == 0 {
+                // Use the generated const interface from the plugin_impl macro
+                unsafe {
+                    *interface = &__CUBEMELON_GENERATED_INTERFACE as *const _ as *const std::ffi::c_void;
+                }
+                return ::cubemelon_sdk::error::CubeMelonPluginErrorCode::Success;
+            }
+
+            // If we reach here, no supported interface was found
+            unsafe { *interface = std::ptr::null(); }
+            ::cubemelon_sdk::error::CubeMelonPluginErrorCode::InterfaceNotSupported
+        }
     }
 }

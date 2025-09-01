@@ -313,15 +313,6 @@ pub trait PluginBase {
     /// Get the plugin description in the specified language
     fn get_description(&self, language: crate::types::CubeMelonLanguage) -> *const u8;
 
-    fn get_interface(
-        &self,
-        _plugin_types: u64,
-        _interface_version: u32
-    ) -> Result<*const std::ffi::c_void, crate::error::CubeMelonPluginErrorCode> {
-        // Default implementation, can be overridden
-        Err(crate::error::CubeMelonPluginErrorCode::InterfaceNotSupported)
-    }
-
     /// Initialize the plugin
     fn initialize(
         &mut self,

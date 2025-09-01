@@ -48,8 +48,9 @@ pub fn process_single_task_impl_attribute(
         // Generate CubeMelonSingleTaskInterface trait implementation
         #single_task_interface_impl
         
-        // Generate methods to support get_interface in the main PluginBase implementation
+        // Generate interface implementation methods for SingleTask interface
         #interface_implementation
+        
     })
 }
 
@@ -150,50 +151,11 @@ fn generate_single_task_interface_impl(
     })
 }
 
-/// Generate interface implementation methods for integration with main plugin
+/// Generate compile-time markers and helper methods
 fn generate_interface_implementation(struct_name: &Ident) -> TokenStream2 {
     quote! {
-        // Add methods to the main plugin implementation to support SingleTaskInterface
+        // Add helper methods to the main plugin implementation
         impl #struct_name {
-            /// Get interface implementation for SingleTask
-            /// 
-            /// This method should be called from the main get_interface implementation
-            /// when PLUGIN_TYPE_SINGLE_TASK is requested.
-            /// 
-            /// # Usage in main get_interface method:
-            /// ```rust
-            /// fn get_interface(
-            ///     &self,
-            ///     plugin_types: u64,
-            ///     interface_version: u32,
-            /// ) -> Result<*const std::ffi::c_void, CubeMelonPluginErrorCode> {
-            ///     use cubemelon_sdk::types::CubeMelonPluginType;
-            ///     
-            ///     if (plugin_types & (CubeMelonPluginType::SingleTask as u64)) != 0 {
-            ///         return self.single_task_interface(interface_version);
-            ///     }
-            ///     
-            ///     Err(CubeMelonPluginErrorCode::InterfaceNotSupported)
-            /// }
-            /// ```
-            pub fn single_task_interface(
-                &self,
-                interface_version: u32,
-            ) -> Result<*const std::ffi::c_void, ::cubemelon_sdk::error::CubeMelonPluginErrorCode> {
-                // Check interface version (version 1 for now)
-                if interface_version != 1 {
-                    return Err(::cubemelon_sdk::error::CubeMelonPluginErrorCode::VersionMismatch);
-                }
-
-                // Create the interface using the existing helper
-                let interface = ::cubemelon_sdk::interfaces::single_task::create_single_task_interface::<#struct_name>();
-                
-                // Box the interface and return as pointer
-                // Note: The caller is responsible for freeing this memory
-                let boxed_interface = Box::new(interface);
-                Ok(Box::into_raw(boxed_interface) as *const std::ffi::c_void)
-            }
-
             /// Check if this plugin supports SingleTask interface
             /// 
             /// This is a helper method for use in supported_types() implementations.
