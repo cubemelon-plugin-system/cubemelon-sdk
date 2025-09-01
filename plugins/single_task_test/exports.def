@@ -1,0 +1,9 @@
+EXPORTS
+    get_plugin_sdk_version     @1
+    get_plugin_uuid            @2
+    get_plugin_version         @3
+    get_plugin_supported_types @4
+    create_plugin              @5
+    get_plugin_interface       @6
+    destroy_plugin             @7
+    can_unload_now             @8

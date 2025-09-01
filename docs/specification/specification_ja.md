@@ -1,7 +1,7 @@
 # CubeMelon プラグインシステム 仕様書
 <div style="text-align: right;">
-2025/09/01<br>
-PLUGIN_SDK_VERSION 0.11.1
+2025/09/02<br>
+PLUGIN_SDK_VERSION 0.11.2
 </div>
 
 ---
@@ -457,6 +457,8 @@ typedef struct CubeMelonPlugin CubeMelonPlugin;
 
 #### 3.2.1 基本インターフェイス
 
+プラグインのインスタンスが生成されたとき、最初に取得すべきインターフェイスです。`get_plugin_interface()` C ABI 関数を通じて取得します。
+
 ```c
 typedef struct {
     // 基本情報取得
@@ -482,7 +484,7 @@ typedef struct {
     CubeMelonPluginErrorCode (*initialize)(
         CubeMelonPlugin* plugin, 
         const CubeMelonPlugin* host_plugin,
-        const CubeMelonInterface* host_interface,
+        const CubeMelonPluginManagerInterface* host_interface,
         const CubeMelonHostServices* host_services
     );
     CubeMelonPluginErrorCode (*uninitialize)(
@@ -507,7 +509,7 @@ typedef struct {
 CubeMelonPluginErrorCode initialize(
     CubeMelonPlugin* plugin, 
     const CubeMelonPlugin* host_plugin,
-    const CubeMelonInterface* host_interface,
+    const CubeMelonPluginManagerInterface* host_interface,
     const CubeMelonHostServices* host_services
 ) {
     if (plugin == NULL) {
@@ -552,7 +554,7 @@ CubeMelonPluginErrorCode uninitialize(
 
 ### 3.3 標準インターフェイス
 
-プラグインは`CubeMelonInterface::get_interface()`メソッドを通じて、機能別インターフェイスを提供します。以下は標準的なインターフェイス定義です。
+プラグインは `get_plugin_interface()` C ABI 関数を通じて、機能別インターフェイスを提供します。以下は標準的なインターフェイス定義です。
 
 #### 3.3.1 単発実行インターフェイス（同期）
 
@@ -1695,7 +1697,7 @@ typedef struct {
 // 基本インターフェイスの初期化メソッド
 bool (*initialize)(CubeMelonPlugin* plugin, 
                    const CubeMelonPlugin* host_plugin,
-                   const CubeMelonInterface* host_interface,
+                   const CubeMelonPluginManagerInterface* host_interface,
                    const CubeMelonHostServices* host_services); // ホストサービスへのアクセスポイント
 ```
 
@@ -1713,7 +1715,7 @@ typedef struct {
 // 初期化時にサービスを保存
 CubeMelonPluginErrorCode my_plugin_initialize(CubeMelonPlugin* plugin, 
                           const CubeMelonPlugin* host,
-                          const CubeMelonInterface* host_interface,
+                          const CubeMelonPluginManagerInterface* host_interface,
                           const CubeMelonHostServices* host_services) {
     MyPluginData* data = get_plugin_data(plugin);
     if (data)
