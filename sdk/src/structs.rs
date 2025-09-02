@@ -4,7 +4,7 @@
 //! and may reference other modules. This helps avoid circular dependencies.
 
 use crate::types::{
-    CubeMelonUUID, CubeMelonVersion, CubeMelonLanguage, CubeMelonTaskType, CubeMelonExecutionStatus
+    CubeMelonUUID, CubeMelonVersion, CubeMelonLanguage, CubeMelonTaskType, CubeMelonExecutionStatus, CubeMelonPluginType
 };
 use crate::error::CubeMelonPluginErrorCode;
 use crate::memory::{CubeMelonString, CubeMelonValue,};
@@ -18,12 +18,12 @@ pub struct CubeMelonPluginBasicInfo {
     pub uuid: CubeMelonUUID,
     /// Plugin version
     pub version: CubeMelonVersion,
+    /// Supported functionality types (raw u64 value of combined CubeMelonPluginType flags)
+    pub supported_types: u64,
     /// Plugin name in specified language
     pub name: CubeMelonString,
     /// Plugin description in specified language
     pub description: CubeMelonString,
-    /// Supported functionality types (raw u64 value of combined CubeMelonPluginType flags)
-    pub supported_types: u64,
 }
 
 impl CubeMelonPluginBasicInfo {
@@ -31,16 +31,16 @@ impl CubeMelonPluginBasicInfo {
     pub fn new(
         uuid: CubeMelonUUID,
         version: CubeMelonVersion,
+        supported_types: u64,
         name: CubeMelonString,
         description: CubeMelonString,
-        supported_types: u64,
     ) -> Self {
         Self {
             uuid,
             version,
+            supported_types,
             name,
             description,
-            supported_types,
         }
     }
 }
@@ -274,13 +274,22 @@ pub struct CubeMelonHostServices {
     )>,
     /// System language function
     pub get_system_language: Option<unsafe extern "C" fn() -> CubeMelonLanguage>,
+    
+    /// Get host interface function
+    /// Allows child plugins to access interfaces from their parent plugins in the hierarchy
+    pub get_host_interface: Option<unsafe extern "C" fn(
+        interface_type: CubeMelonPluginType,
+        interface_version: u32,
+        plugin: *mut *const CubeMelonPlugin,
+        interface: *mut *const std::ffi::c_void,
+    ) -> CubeMelonPluginErrorCode>,
 
     /// Reserved for future host services
     /// Future services might include:
     /// - get_system_time
     /// - get_app_data_directory
     /// - etc.
-    pub reserved: [*mut std::ffi::c_void; 8],
+    pub reserved: [*mut std::ffi::c_void; 7],  // 1つ減らす
 }
 
 impl CubeMelonHostServices {
@@ -291,12 +300,19 @@ impl CubeMelonHostServices {
             *const u8,
             *const u8,
         )>,
-        get_system_language_fn: Option<unsafe extern "C" fn() -> CubeMelonLanguage>
+        get_system_language_fn: Option<unsafe extern "C" fn() -> CubeMelonLanguage>,
+        get_host_interface_fn: Option<unsafe extern "C" fn(
+            CubeMelonPluginType,
+            u32,
+            *mut *const CubeMelonPlugin,
+            *mut *const std::ffi::c_void,
+        ) -> CubeMelonPluginErrorCode>
     ) -> Self {
         Self {
             log: log_fn,
             get_system_language: get_system_language_fn,
-            reserved: [std::ptr::null_mut(); 8],
+            get_host_interface: get_host_interface_fn,
+            reserved: [std::ptr::null_mut(); 7],
         }
     }
 
@@ -305,7 +321,8 @@ impl CubeMelonHostServices {
         Self {
             log: None,
             get_system_language: None,
-            reserved: [std::ptr::null_mut(); 8],
+            get_host_interface: None,
+            reserved: [std::ptr::null_mut(); 7],
         }
     }
 
@@ -335,11 +352,37 @@ impl CubeMelonHostServices {
         }
     }
 
-    pub unsafe fn get_system_language(&self) -> CubeMelonLanguage {
+    pub fn get_system_language(&self) -> CubeMelonLanguage {
         if let Some(get_lang_fn) = self.get_system_language {
-            get_lang_fn()
+            unsafe { get_lang_fn() }
         } else {
             CubeMelonLanguage::EN_US
+        }
+    }
+
+    pub fn get_host_interface(
+        &self,
+        interface_type: CubeMelonPluginType,
+        interface_version: u32,
+    ) -> Result<(*const CubeMelonPlugin, *const std::ffi::c_void), CubeMelonPluginErrorCode> {
+        if let Some(get_interface_fn) = self.get_host_interface {
+            let mut plugin_ptr: *const CubeMelonPlugin = std::ptr::null();
+            let mut interface_ptr: *const std::ffi::c_void = std::ptr::null();
+            let result = unsafe {
+                get_interface_fn(
+                    interface_type,
+                    interface_version,
+                    &mut plugin_ptr as *mut *const CubeMelonPlugin,
+                    &mut interface_ptr as *mut *const std::ffi::c_void,
+                )
+            };
+            if result == CubeMelonPluginErrorCode::Success {
+                Ok((plugin_ptr, interface_ptr))
+            } else {
+                Err(result)
+            }
+        } else {
+            Err(CubeMelonPluginErrorCode::NotSupported)
         }
     }
 }
@@ -360,7 +403,9 @@ mod tests {
         let description = CubeMelonString::from_static_str("A test plugin");
         let types = CubeMelonPluginType::SingleTask as u64;
 
-        let info = CubeMelonPluginBasicInfo::new(uuid, version, name, description, types);
+        let info = CubeMelonPluginBasicInfo::new(
+            uuid, version, types, name, description
+        );
         
         assert_eq!(info.uuid, uuid);
         assert_eq!(info.version, version);

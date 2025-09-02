@@ -314,9 +314,9 @@ typedef void (*CubeMelonTaskCallback)(
 typedef struct {
     CubeMelonUUID uuid;                  // プラグインのUUID
     CubeMelonVersion version;            // プラグインのバージョン
+    CubeMelonPluginType supported_types; // サポート機能
     const CubeMelonString name;          // 指定言語での名前
     const CubeMelonString description;   // 指定言語での説明
-    CubeMelonPluginType supported_types; // サポート機能
 } CubeMelonPluginBasicInfo;
 #pragma pack(pop)
 ```
@@ -332,6 +332,14 @@ typedef struct {
     // 言語情報取得
     CubeMelonLanguage (*get_system_language)(void);
     
+    // ホストプラグインの機能にアクセス
+    CubeMelonPluginErrorCode (*get_host_interface)(
+        CubeMelonPluginType interface_type,
+        uint32_t interface_version,
+        const CubeMelonPlugin** plugin,
+        const void** interface
+    );
+
     // 将来的に他のホストサービスも追加可能
     // void (*get_system_time)(CubeMelonTime* out_time);
     // const char8_t* (*get_app_data_directory)(void);
@@ -483,8 +491,6 @@ typedef struct {
     // ライフサイクル管理
     CubeMelonPluginErrorCode (*initialize)(
         CubeMelonPlugin* plugin, 
-        const CubeMelonPlugin* host_plugin,
-        const CubeMelonPluginManagerInterface* host_interface,
         const CubeMelonHostServices* host_services
     );
     CubeMelonPluginErrorCode (*uninitialize)(
@@ -508,8 +514,6 @@ typedef struct {
 ```c
 CubeMelonPluginErrorCode initialize(
     CubeMelonPlugin* plugin, 
-    const CubeMelonPlugin* host_plugin,
-    const CubeMelonPluginManagerInterface* host_interface,
     const CubeMelonHostServices* host_services
 ) {
     if (plugin == NULL) {
@@ -1094,27 +1098,7 @@ your_project/
 
 ### 4.3 使用上の注意事項
 
-#### 4.3.1 プラグインインターフェイスの安全な使用
-
-##### ⚠️重要な警告⚠️
-
-プラグインインターフェイスは、そのインターフェイスを取得したプラグインに対してのみ使用してください。
-
-```c
-// ❌ 危険な使用例
-
-CubeMelonPlugin* plugin_1 = create_plugin();
-CubeMelonPlugin* plugin_2 = create_plugin();
-const CubeMelonInterface* interface_1 = get_plugin_interface(plugin_1);
-
-// これは未定義動作を引き起こします
-interface_1->get_name(plugin_2, LANGUAGE_EN_US);  // ❌ plugin_1のinterfaceでplugin_2にアクセス
-
-// ✅ 正しい使用例
-interface_1->get_name(plugin_1, LANGUAGE_EN_US);  // ✅ 同じプラグインのinterfaceとinstanceを使用
-```
-
-#### 4.3.2 プラグインファイルの安全な解放
+#### 4.3.1 プラグインファイルの安全な解放
 
 - ホストはプラグインファイルをアンロードする前に、 `can_unload_now()` 関数を呼び出してアンロード可能かを問い合わせます。
 - プラグインは、まだ生存中のインスタンスがある場合、`false` を返してアンロードを拒否します。
@@ -1317,17 +1301,18 @@ if (interface->some_function_returning_string(plugin, &string) == PLUGIN_SUCCESS
 }
 
 // バッファを返す場合
-CubeMelonValue* value;
+CubeMelonValue value;
 if (interface->some_function_returning_buffer(plugin, &value) == PLUGIN_SUCCESS) {
     // データを使用
-    process_data(value->buffer.data, value->buffer.size);
+    process_data(value.buffer.data, value.buffer.size);
 
     // 必ず解放
-    if (value->free_value != NULL)
+    if (value.free_value != NULL)
     {
-        value->free_value(value);
-        value->buffer.data = NULL; // 必ず NULL でクリアする
-        value->buffer.size = 0;    // 必ず 0 でクリアする
+        value.free_value(value);
+        value.buffer.data = NULL; // 必ず NULL でクリアする
+        value.buffer.size = 0;    // 必ず 0 でクリアする
+        value.free_value  = NULL; // 必ず NULL でクリアする
     }
 }
 ```
@@ -1340,7 +1325,7 @@ if (interface->some_function_returning_buffer(plugin, &value) == PLUGIN_SUCCESS)
 
 #### 7.2.2 スレッド安全性
 
-- 一つのCubeMelonString/CubeMelonBufferオブジェクトを複数スレッドで同時に使用してはならない
+- 一つのCubeMelonString/CubeMelonValueオブジェクトを複数スレッドで同時に使用してはならない
 - `free_*()` 関数は該当オブジェクトを取得したスレッドで呼び出すこと
 - エラー時のoutパラメータは NULLまたは0で初期化される
 
@@ -1361,7 +1346,7 @@ if (interface->some_function_returning_buffer(plugin, &value) == PLUGIN_SUCCESS)
 ```c
 // CubeMelonInterface のメソッド
 bool (*is_thread_safe)(void);
-CubeMelonThreadRequirements (*get_thread_requirements)(void); // CubeMelonThreadRequirements のビットフラグ
+CubeMelonThreadRequirements (*get_thread_requirements)(void); // ビットフラグ
 ```
 
 #### スレッド安全性の解釈
@@ -1420,23 +1405,10 @@ pub struct MyPlugin {
 
 #[plugin_impl]
 impl MyPlugin {
-    pub fn new() -> Self {
-        Self {
-            initialized: false,
-        }
-    }
-    
-    pub fn get_uuid() -> CubeMelonUUID {
-        uuid!("12345678-1234-5678-9abc-123456789abc")
-    }
-    
-    pub fn get_version() -> CubeMelonVersion {
-        version!(1, 0, 0)
-    }
-
-    pub fn get_supported_types() -> u64 {
-        CubeMelonPluginType::SingleTask as u64
-    }
+    pub fn new() -> Self { Self { initialized: false, } }
+    pub fn get_uuid() -> CubeMelonUUID { uuid!("12345678-1234-5678-9abc-123456789abc") }
+    pub fn get_version() -> CubeMelonVersion { version!(1, 0, 0) }
+    pub fn get_supported_types() -> u64 { CubeMelonPluginType::SingleTask as u64 }
 
     pub fn get_name(&self, language: CubeMelonLanguage) -> *const u8 {
         multilang_map!(language, "Single Task Plugin", {
@@ -1450,30 +1422,14 @@ impl MyPlugin {
         })
     }
 
-    pub fn get_interface(
-        &self,
-        plugin_types: u64,
-        interface_version: u32
-    ) -> Result<*const std::ffi::c_void, CubeMelonPluginErrorCode> {
-        if (plugin_types & (CubeMelonPluginType::SingleTask as u64)) != 0 {
-            return self.single_task_interface(interface_version);
-        }
-
-        Err(CubeMelonPluginErrorCode::InterfaceNotSupported)
-    }
-
     pub fn initialize(
         &mut self,
-        _host_plugin: Option<&CubeMelonPlugin>,
-        _host_interface: Option<&CubeMelonInterface>,
-        host_services: Option<&CubeMelonHostServices>,
+        _host_services: Option<&CubeMelonHostServices>,
     ) -> Result<(), CubeMelonPluginErrorCode> {
         if self.initialized {
             return Err(CubeMelonPluginErrorCode::AlreadyInitialized);
         }
-
         self.initialized = true;
-
         Ok(())
     }
 
@@ -1481,9 +1437,7 @@ impl MyPlugin {
         if !self.initialized {
             return Err(CubeMelonPluginErrorCode::NotInitialized);
         }
-
         self.initialized = false;
-
         Ok(())
     }
 }
@@ -1551,14 +1505,13 @@ use cubemelon_sdk::prelude::*;
 // プラグイン実装側
 #[plugin_impl] 
 impl MyDataProcessor {
-    pub fn initialize(&mut self,
-        host_plugin: PluginRef,
-        host_interface: InterfaceRef,
-        host_services: HostServices
+    pub fn initialize(
+        &mut self,
+        host_services: Option<&CubeMelonHostServices>
     ) -> Result<(), CubeMelonPluginErrorCode> {
-        self.host_plugin = Some(host_plugin);
-        self.host_interface = Some(host_interface);
-        self.host_service = Some(host_services.clone());
+        if let Some(services) = host_services {
+            self.host_services = Some(*services);
+        }
         Ok(())
     }
 }
@@ -1566,9 +1519,6 @@ impl MyDataProcessor {
 #[data_plugin_impl]
 impl MyDataProcessor {
     pub fn process_data(&self, input: &[u8]) -> Result<String, CubeMelonPluginErrorCode> {
-        let manager = self.manager.as_ref()
-            .ok_or(CubeMelonPluginErrorCode::NOT_INITIALIZED)?;
-        
         // HTTPプラグインにHTTP POSTを依頼
         let task_json = r#"{
             "action": "network.http_post",
@@ -1578,9 +1528,13 @@ impl MyDataProcessor {
             }
         }"#;
         
-        // 適切なプラグインを見つけてタスク実行
-        let target_uuid = manager.find_plugin_for_task(task_json)?;
-        manager.execute_task_on_plugin(target_uuid, task_json)
+        if let Some(ref services) = self.host_services {
+            if let Ok((plugin, manager)) = services.get_host_interface(CubeMelonPluginType::Manager, 1) {
+                // 適切なプラグインを見つけてタスク実行
+                let target_uuid = manager.find_plugin_for_task(task_json)?;
+                manager.execute_task_on_plugin(target_uuid, task_json)
+            };
+        }
     }
 }
 

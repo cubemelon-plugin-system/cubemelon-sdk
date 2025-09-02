@@ -23,36 +23,39 @@
 //! impl MyPlugin {
 //!     pub fn new() -> Self { Self }
 //!     
-//!     pub fn uuid() -> CubeMelonUUID {
+//!     pub fn get_uuid() -> CubeMelonUUID {
 //!         uuid!("12345678-1234-5678-9abc-123456789abc")
 //!     }
 //!     
-//!     pub fn version() -> CubeMelonVersion {
+//!     pub fn get_version() -> CubeMelonVersion {
 //!         CubeMelonVersion { major: 1, minor: 0, patch: 0 }
 //!     }
 //!     
-//!     pub fn name(&self, _language: CubeMelonLanguage) -> &str {
-//!         "My Plugin"
+//!     pub fn get_name(&self, _language: CubeMelonLanguage) -> *const u8 {
+//!         multilang_map!!(language, "My Plugin", {})
 //!     }
 //!     
-//!     pub fn description(&self, _language: CubeMelonLanguage) -> &str {
-//!         "A simple plugin example"
+//!     pub fn get_description(&self, _language: CubeMelonLanguage) -> *const u8 {
+//!         multilang_map!!(language, "A simple plugin example", {})
 //!     }
 //!     
-//!     pub fn supported_types() -> CubeMelonPluginType {
-//!         CubeMelonPluginType::SINGLE_TASK
+//!     pub fn get_supported_types() -> u64 {
+//!         CubeMelonPluginType::SINGLE_TASK as u64
 //!     }
 //! }
+//! 
+//! #[plugin_interface(basic)]
+//! impl Plugin {}
 //! ```
 
 // SDK version information
 pub const SDK_VERSION: CubeMelonVersion = CubeMelonVersion {
     major: 0,
     minor: 11,
-    patch: 1,
+    patch: 2,
 };
 
-pub const SDK_VERSION_STRING: &str = "0.11.0";
+pub const SDK_VERSION_STRING: &str = "0.11.2";
 
 // Core modules
 pub mod types;
@@ -196,8 +199,8 @@ mod tests {
     fn test_sdk_version() {
         assert_eq!(SDK_VERSION.major, 0);
         assert_eq!(SDK_VERSION.minor, 11);
-        assert_eq!(SDK_VERSION.patch, 1);
-        assert_eq!(SDK_VERSION_STRING, "0.11.1");
+        assert_eq!(SDK_VERSION.patch, 2);
+        assert_eq!(SDK_VERSION_STRING, "0.11.2");
     }
 
     #[test]

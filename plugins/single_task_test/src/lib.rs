@@ -47,8 +47,6 @@ impl Plugin {
 
     pub fn initialize(
         &mut self,
-        _host_plugin: Option<&CubeMelonPlugin>,
-        _host_interface: Option<&CubeMelonInterface>,
         host_services: Option<&CubeMelonHostServices>,
     ) -> Result<(), CubeMelonPluginErrorCode> {
         if self.initialized {

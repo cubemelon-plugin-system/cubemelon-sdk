@@ -316,8 +316,6 @@ pub trait PluginBase {
     /// Initialize the plugin
     fn initialize(
         &mut self,
-        _host_plugin: Option<&crate::instance::CubeMelonPlugin>,
-        _host_interface: Option<&crate::interfaces::CubeMelonInterface>,
         _host_services: Option<&crate::structs::CubeMelonHostServices>,
     ) -> Result<(), crate::error::CubeMelonPluginErrorCode> {
         // Default implementation, can be overridden

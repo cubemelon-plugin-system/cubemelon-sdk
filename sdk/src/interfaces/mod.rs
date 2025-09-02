@@ -51,8 +51,6 @@ pub struct CubeMelonInterface {
     /// Initialize the plugin
     pub initialize: extern "C" fn(
         plugin: *mut CubeMelonPlugin,
-        host_plugin: *const CubeMelonPlugin,
-        host_interface: *const CubeMelonInterface,
         host_services: *const CubeMelonHostServices,
     ) -> CubeMelonPluginErrorCode,
 
@@ -120,8 +118,6 @@ extern "C" fn default_get_description(
 
 extern "C" fn default_initialize(
     _plugin: *mut CubeMelonPlugin,
-    _host_plugin: *const CubeMelonPlugin,
-    _host_interface: *const CubeMelonInterface,
     _host_services: *const CubeMelonHostServices,
 ) -> CubeMelonPluginErrorCode {
     CubeMelonPluginErrorCode::Success
@@ -188,8 +184,6 @@ mod tests {
 
         let init_result = default_initialize(
             std::ptr::null_mut(),
-            std::ptr::null(),
-            std::ptr::null(),
             std::ptr::null(),
         );
         assert_eq!(init_result, CubeMelonPluginErrorCode::Success);

@@ -83,8 +83,6 @@ impl PluginBase for Plugin {
     
     fn initialize(
         &mut self,
-        _host_plugin: Option<&CubeMelonPlugin>,
-        _host_interface: Option<&CubeMelonInterface>,
         host_services: Option<&CubeMelonHostServices>,
     ) -> Result<(), CubeMelonPluginErrorCode> {
         if self.initialized {
@@ -238,25 +236,11 @@ extern "C" fn c_get_description(
 
 extern "C" fn c_initialize(
     plugin: *mut CubeMelonPlugin,
-    host_plugin: *const CubeMelonPlugin,
-    host_interface: *const CubeMelonInterface,
     host_services: *const CubeMelonHostServices,
 ) -> CubeMelonPluginErrorCode {
     if plugin.is_null() {
         return CubeMelonPluginErrorCode::NullPointer;
     }
-
-    let host_plugin_opt = if host_plugin.is_null() {
-        None
-    } else {
-        unsafe { Some(&*host_plugin) }
-    };
-
-    let host_interface_opt = if host_interface.is_null() {
-        None
-    } else {
-        unsafe { Some(&*host_interface) }
-    };
 
     let host_services_opt = if host_services.is_null() {
         None
@@ -265,7 +249,7 @@ extern "C" fn c_initialize(
     };
 
     with_plugin_mut::<Plugin, _, _>(plugin, |p| {
-        match p.initialize(host_plugin_opt, host_interface_opt, host_services_opt) {
+        match p.initialize(host_services_opt) {
             Ok(()) => CubeMelonPluginErrorCode::Success,
             Err(err) => err,
         }

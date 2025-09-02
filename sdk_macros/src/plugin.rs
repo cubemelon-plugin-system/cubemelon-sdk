@@ -392,7 +392,7 @@ fn generate_plugin_base_impl(
 
     let initialize_impl = if let Some(method) = &methods.initialize_method {
         let method_name = &method.sig.ident;
-        quote! { self.#method_name(host_plugin, host_interface, host_services) }
+        quote! { self.#method_name(host_services) }
     } else {
         quote! { Ok(()) } // Default: no-op initialization
     };
@@ -436,8 +436,6 @@ fn generate_plugin_base_impl(
 
             fn initialize(
                 &mut self,
-                host_plugin: Option<&::cubemelon_sdk::instance::CubeMelonPlugin>,
-                host_interface: Option<&::cubemelon_sdk::interfaces::CubeMelonInterface>,
                 host_services: Option<&::cubemelon_sdk::structs::CubeMelonHostServices>,
             ) -> Result<(), ::cubemelon_sdk::error::CubeMelonPluginErrorCode> {
                 #initialize_impl
@@ -662,25 +660,11 @@ fn generate_c_abi_wrappers(
             /// C ABI wrapper: Initialize plugin (user implementation)
             extern "C" fn __cubemelon_c_initialize(
                 plugin: *mut ::cubemelon_sdk::instance::CubeMelonPlugin,
-                host_plugin: *const ::cubemelon_sdk::instance::CubeMelonPlugin,
-                host_interface: *const ::cubemelon_sdk::interfaces::CubeMelonInterface,
                 host_services: *const ::cubemelon_sdk::structs::CubeMelonHostServices,
             ) -> ::cubemelon_sdk::error::CubeMelonPluginErrorCode {
                 if plugin.is_null() {
                     return ::cubemelon_sdk::error::CubeMelonPluginErrorCode::NullPointer;
                 }
-
-                let host_plugin_opt = if host_plugin.is_null() {
-                    None
-                } else {
-                    unsafe { Some(&*host_plugin) }
-                };
-
-                let host_interface_opt = if host_interface.is_null() {
-                    None
-                } else {
-                    unsafe { Some(&*host_interface) }
-                };
 
                 let host_services_opt = if host_services.is_null() {
                     None
@@ -689,7 +673,7 @@ fn generate_c_abi_wrappers(
                 };
 
                 ::cubemelon_sdk::instance::with_plugin_mut::<#struct_name, _, _>(plugin, |p| {
-                    match p.#method_name(host_plugin_opt, host_interface_opt, host_services_opt) {
+                    match p.#method_name(host_services_opt) {
                         Ok(()) => ::cubemelon_sdk::error::CubeMelonPluginErrorCode::Success,
                         Err(err) => err,
                     }
@@ -701,8 +685,6 @@ fn generate_c_abi_wrappers(
             /// C ABI wrapper: Initialize plugin (default implementation)
             extern "C" fn __cubemelon_c_initialize(
                 _plugin: *mut ::cubemelon_sdk::instance::CubeMelonPlugin,
-                _host_plugin: *const ::cubemelon_sdk::instance::CubeMelonPlugin,
-                _host_interface: *const ::cubemelon_sdk::interfaces::CubeMelonInterface,
                 _host_services: *const ::cubemelon_sdk::structs::CubeMelonHostServices,
             ) -> ::cubemelon_sdk::error::CubeMelonPluginErrorCode {
                 ::cubemelon_sdk::error::CubeMelonPluginErrorCode::Success
