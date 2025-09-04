@@ -36,7 +36,7 @@ impl Plugin {
 /// Implement the base plugin trait
 impl PluginBase for Plugin {
     fn get_uuid() -> CubeMelonUUID {
-        uuid!("550e8400-e29b-41d4-a716-446655440001")
+        uuid!("d6090f56-26a4-420c-9e25-a37dd8ebae2e")
     }
 
     fn get_version() -> CubeMelonVersion {

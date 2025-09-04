@@ -1,7 +1,7 @@
 # CubeMelon プラグインシステム 仕様書
 <div style="text-align: right;">
-2025/09/02<br>
-PLUGIN_SDK_VERSION 0.11.2
+2025/09/04<br>
+PLUGIN_SDK_VERSION 0.11.3
 </div>
 
 ---
@@ -438,7 +438,7 @@ struct CubeMelonValue {
         } buffer;
         struct {
             size_t count;
-            const CubeMelonValue** items;
+            const CubeMelonValue* items;
         } array;
     } data;
     void (*free_value)(CubeMelonValue* value);
@@ -589,7 +589,7 @@ typedef struct {
     // タスク実行（非同期）
     CubeMelonPluginErrorCode (*execute)(
         CubeMelonPlugin* plugin,
-        const CubeMelonTaskRequest* request,
+        CubeMelonTaskRequest* request,
         CubeMelonTaskCallback callback
     );
 
@@ -702,11 +702,11 @@ direction LR
 ```c
 typedef struct {
     // 状態データの保存・復元
-    // 呼び出し元が data.free_value() で解放
+    // 呼び出し元がdataを作成し、プラグインがdata内容を設定、data.free_value()で内容を解放
     CubeMelonPluginErrorCode (*load_state)(
         CubeMelonPlugin* plugin,
         CubeMelonPluginStateScope scope,
-        CubeMelonValue** data
+        CubeMelonValue* data
     );
     CubeMelonPluginErrorCode (*save_state)(
         CubeMelonPlugin* plugin,
@@ -723,12 +723,12 @@ typedef struct {
     );
 
     // 特定のキーに対応する状態データの設定・取得
-    // 呼び出し元が value.free_value() で解放
+    // 呼び出し元がvalueを作成し、プラグインがvalue内容を設定、value.free_value()で内容を解放
     CubeMelonPluginErrorCode (*get_state_value)(
         const CubeMelonPlugin* plugin,
         CubeMelonPluginStateScope scope,
         const char8_t* key,
-        CubeMelonValue** value
+        CubeMelonValue* value
     );
     CubeMelonPluginErrorCode (*set_state_value)(
         CubeMelonPlugin* plugin,
@@ -739,11 +739,11 @@ typedef struct {
     );
     
     // 状態データの一覧と数を取得
-    // 呼び出し元が keys.free_value() で解放
+    // 呼び出し元がkeysを作成し、プラグインがkeys内容を設定、keys.free_value()で内容を解放
     CubeMelonPluginErrorCode (*list_state_keys)(
         const CubeMelonPlugin* plugin,
         CubeMelonPluginStateScope scope,
-        CubeMelonValue** keys
+        CubeMelonValue* keys
     );
 
     // 特定のキーに対応する状態データを削除する
@@ -804,7 +804,7 @@ typedef struct {
     CubeMelonPluginErrorCode (*execute_async_task)(
         CubeMelonPlugin* plugin,
         CubeMelonUUID target_uuid,
-        const CubeMelonTaskRequest* request,
+        CubeMelonTaskRequest* request,
         CubeMelonTaskCallback callback
     );
 
@@ -830,11 +830,11 @@ typedef struct {
 ```c
 typedef struct {
     // ファイル読み込み
-    // 呼び出し元が data.free_value() で解放
+    // 呼び出し元がdataを作成し、プラグインがdata内容を設定、data.free_value()で内容を解放
     CubeMelonPluginErrorCode (*read_file)(
         CubeMelonPlugin* plugin,
         const char8_t* filepath,
-        CubeMelonValue** data
+        CubeMelonValue* data
     );
     
     // ストリーム読み込み
@@ -843,12 +843,12 @@ typedef struct {
         const void* source,
         int* stream_id
     );
-    // 呼び出し元が data.free_value() で解放
+    // 呼び出し元がdataを作成し、プラグインがdata内容を設定、data.free_value()で内容を解放
     CubeMelonPluginErrorCode (*read_stream)(
         CubeMelonPlugin* plugin,
         int stream_id,
         size_t size,
-        CubeMelonValue** data
+        CubeMelonValue* data
     );
     void (*close_stream)(
         CubeMelonPlugin* plugin,
@@ -860,10 +860,10 @@ typedef struct {
         const CubeMelonPlugin* plugin,
         const char8_t* format
     );
-    // 呼び出し元が supported_formats.free_value() で解放
+    // 呼び出し元が supported_formats を作成、プラグインが内容を設定、呼び出し元が supported_formats->free_value() で内容を解放
     CubeMelonPluginErrorCode (*get_supported_formats)(
         const CubeMelonPlugin* plugin,
-        CubeMelonValue** supported_formats
+        CubeMelonValue* supported_formats
     );
 } CubeMelonDataInputInterface;
 ```
@@ -900,14 +900,14 @@ typedef struct {
     );
     
     // フォーマット変換
-    // input_dataは呼び出し元確保、呼び出し元解放
-    // output_dataはプラグイン確保、呼び出し元が free_value() で解放
+    // input_dataは呼び出し元が配列を作成して内容も設定
+    // output_dataは呼び出し元が作成、プラグインが内容を設定、呼び出し元が output_data->free_value() で内容を解放
     CubeMelonPluginErrorCode (*convert_format)(
         CubeMelonPlugin* plugin,
         const char8_t* input_format,
-        const CubeMelonValue** input_data,
+        const CubeMelonValue* input_data,
         const char8_t* output_format,
-        CubeMelonValue** output_data
+        CubeMelonValue* output_data
     );
 } CubeMelonDataOutputInterface;
 ```

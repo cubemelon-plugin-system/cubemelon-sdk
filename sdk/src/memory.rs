@@ -234,7 +234,7 @@ pub struct CubeMelonValue {
     pub reserved: u32,
     /// Union containing the actual data
     pub data: CubeMelonValueData,
-    /// Function to free the value memory
+    /// Function to free the value contents (not the container itself)
     pub free_value: Option<unsafe extern "C" fn(*mut CubeMelonValue)>,
 }
 
@@ -291,8 +291,8 @@ pub struct CubeMelonValueBuffer {
 pub struct CubeMelonValueArray {
     /// Number of items in the array
     pub count: usize,
-    /// Pointer to array of CubeMelonValue pointers
-    pub items: *const *const CubeMelonValue,
+    /// Pointer to array of CubeMelonValue items (not pointers to CubeMelonValue)
+    pub items: *const CubeMelonValue,
 }
 
 impl CubeMelonValue {
@@ -425,16 +425,11 @@ impl CubeMelonValue {
     /// Create an array value from a Vec of CubeMelonValue
     /// 
     /// The array is allocated on the heap and must be freed using free_value()
-    pub fn array(values: Vec<Box<CubeMelonValue>>) -> Self {
-        let mut ptrs: Vec<*const CubeMelonValue> = values
-            .into_iter()
-            .map(|boxed| Box::into_raw(boxed) as *const CubeMelonValue)
-            .collect();
-        
-        ptrs.shrink_to_fit();
-        let ptr = ptrs.as_ptr();
-        let count = ptrs.len();
-        std::mem::forget(ptrs); // Prevent automatic deallocation
+    pub fn array(mut values: Vec<CubeMelonValue>) -> Self {
+        values.shrink_to_fit();
+        let ptr = values.as_ptr();
+        let count = values.len();
+        std::mem::forget(values); // Prevent automatic deallocation
         
         Self {
             tag: CubeMelonValueTag::Array,
@@ -527,12 +522,12 @@ impl CubeMelonValue {
         }
     }
 
-    /// Get array value as slice of CubeMelonValue pointers
+    /// Get array value as slice of CubeMelonValue
     /// 
     /// # Safety
     /// 
     /// The value must be of type Array
-    pub unsafe fn as_array(&self) -> &[*const CubeMelonValue] {
+    pub unsafe fn as_array(&self) -> &[CubeMelonValue] {
         debug_assert_eq!(self.tag, CubeMelonValueTag::Array);
         if self.data.array.items.is_null() || self.data.array.count == 0 {
             &[]
@@ -591,23 +586,20 @@ unsafe extern "C" fn free_value_impl(value_ptr: *mut CubeMelonValue) {
         }
         CubeMelonValueTag::Array => {
             if !value.data.array.items.is_null() && value.data.array.count > 0 {
-                // Free each item in the array
-                for i in 0..value.data.array.count {
-                    let item_ptr = *value.data.array.items.add(i) as *mut CubeMelonValue;
-                    if !item_ptr.is_null() {
-                        let item = Box::from_raw(item_ptr);
-                        if let Some(free_fn) = item.free_value {
-                            free_fn(Box::into_raw(item));
-                        }
-                    }
-                }
-                
-                // Free the array of pointers
-                let _ = Vec::from_raw_parts(
-                    value.data.array.items as *mut *const CubeMelonValue,
+                // Get the array as a Vec and let it handle the cleanup
+                let items_vec = Vec::from_raw_parts(
+                    value.data.array.items as *mut CubeMelonValue,
                     value.data.array.count,
                     value.data.array.count,
                 );
+                
+                // Free each item in the array that has a free function
+                for mut item in items_vec {
+                    if let Some(free_fn) = item.free_value {
+                        free_fn(&mut item as *mut CubeMelonValue);
+                    }
+                }
+                // Vec's Drop implementation will free the array memory
             }
         }
         _ => {

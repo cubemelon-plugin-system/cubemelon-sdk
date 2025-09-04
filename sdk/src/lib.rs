@@ -52,10 +52,10 @@
 pub const SDK_VERSION: CubeMelonVersion = CubeMelonVersion {
     major: 0,
     minor: 11,
-    patch: 2,
+    patch: 3,
 };
 
-pub const SDK_VERSION_STRING: &str = "0.11.2";
+pub const SDK_VERSION_STRING: &str = "0.11.3";
 
 // Core modules
 pub mod types;
@@ -199,8 +199,8 @@ mod tests {
     fn test_sdk_version() {
         assert_eq!(SDK_VERSION.major, 0);
         assert_eq!(SDK_VERSION.minor, 11);
-        assert_eq!(SDK_VERSION.patch, 2);
-        assert_eq!(SDK_VERSION_STRING, "0.11.2");
+        assert_eq!(SDK_VERSION.patch, 3);
+        assert_eq!(SDK_VERSION_STRING, "0.11.3");
     }
 
     #[test]

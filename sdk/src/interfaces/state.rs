@@ -24,7 +24,7 @@ use crate::instance::CubeMelonPlugin;
 ///     fn load_state(
 ///         &self,
 ///         scope: CubeMelonPluginStateScope,
-///         data: &mut * mut CubeMelonValue,
+///         data: &mut CubeMelonValue,
 ///     ) -> CubeMelonPluginErrorCode {
 ///         // Load state data based on scope
 ///         CubeMelonPluginErrorCode::Success
@@ -38,14 +38,14 @@ pub trait CubeMelonPluginStateInterface {
     /// 
     /// # Arguments
     /// * `scope` - State scope (Local, Host, or Shared)
-    /// * `data` - Buffer to store loaded data. Caller must free using data.free_value()
+    /// * `data` - Buffer to store loaded data. Caller creates container, plugin sets contents, caller uses data.free_value() to free contents
     /// 
     /// # Returns
     /// * `CubeMelonPluginErrorCode` - Error code for operation result
     fn load_state(
         &self,
         scope: CubeMelonPluginStateScope,
-        data: &mut *mut CubeMelonValue,
+        data: &mut CubeMelonValue,
     ) -> CubeMelonPluginErrorCode;
 
     /// Save state data
@@ -85,7 +85,7 @@ pub trait CubeMelonPluginStateInterface {
     /// # Arguments
     /// * `scope` - State scope to query
     /// * `key` - Key name (UTF-8, null-terminated)
-    /// * `value` - Buffer to store value. Caller must free using value.free_value()
+    /// * `value` - Buffer to store value. Caller creates container, plugin sets contents, caller uses value.free_value() to free contents
     /// 
     /// # Returns
     /// * `CubeMelonPluginErrorCode` - Error code for operation result
@@ -93,7 +93,7 @@ pub trait CubeMelonPluginStateInterface {
         &self,
         scope: CubeMelonPluginStateScope,
         key: *const u8,
-        value: &mut *mut CubeMelonValue,
+        value: &mut CubeMelonValue,
     ) -> CubeMelonPluginErrorCode;
 
     /// Set state value for specific key
@@ -118,14 +118,14 @@ pub trait CubeMelonPluginStateInterface {
     /// 
     /// # Arguments
     /// * `scope` - State scope to query
-    /// * `keys` - String array to store key list. Caller must free using keys.free_value()
+    /// * `keys` - String array to store key list. Caller creates container, plugin sets contents, caller uses keys.free_value() to free contents
     /// 
     /// # Returns
     /// * `CubeMelonPluginErrorCode` - Error code for operation result
     fn list_state_keys(
         &self,
         scope: CubeMelonPluginStateScope,
-        keys: &mut *mut CubeMelonValue,
+        keys: &mut CubeMelonValue,
     ) -> CubeMelonPluginErrorCode;
 
     /// Clear state value for specific key
@@ -149,11 +149,11 @@ pub trait CubeMelonPluginStateInterface {
 #[repr(C)]
 pub struct CubeMelonPluginStateInterfaceImpl {
     /// Load state data
-    /// Caller must free data using data.free_value()
+    /// Caller creates container, plugin sets contents, caller uses data->free_value() to free contents
     pub load_state: extern "C" fn(
         plugin: *const CubeMelonPlugin,
         scope: CubeMelonPluginStateScope,
-        data: *mut *mut CubeMelonValue,
+        data: *mut CubeMelonValue,
     ) -> CubeMelonPluginErrorCode,
 
     /// Save state data
@@ -172,12 +172,12 @@ pub struct CubeMelonPluginStateInterfaceImpl {
     ) -> *const u8,
 
     /// Get state value for specific key
-    /// Caller must free value using value.free_value()
+    /// Caller creates container, plugin sets contents, caller uses value->free_value() to free contents
     pub get_state_value: extern "C" fn(
         plugin: *const CubeMelonPlugin,
         scope: CubeMelonPluginStateScope,
         key: *const u8,
-        value: *mut *mut CubeMelonValue,
+        value: *mut CubeMelonValue,
     ) -> CubeMelonPluginErrorCode,
 
     /// Set state value for specific key
@@ -190,11 +190,11 @@ pub struct CubeMelonPluginStateInterfaceImpl {
     ) -> CubeMelonPluginErrorCode,
 
     /// List all state keys
-    /// Caller must free keys using keys.free_value()
+    /// Caller creates container, plugin sets contents, caller uses keys->free_value() to free contents
     pub list_state_keys: extern "C" fn(
         plugin: *const CubeMelonPlugin,
         scope: CubeMelonPluginStateScope,
-        keys: *mut *mut CubeMelonValue,
+        keys: *mut CubeMelonValue,
     ) -> CubeMelonPluginErrorCode,
 
     /// Clear state value for specific key
@@ -223,7 +223,7 @@ where
     extern "C" fn load_state_wrapper<T: CubeMelonPluginStateInterface + 'static>(
         plugin: *const CubeMelonPlugin,
         scope: CubeMelonPluginStateScope,
-        data: *mut *mut CubeMelonValue,
+        data: *mut CubeMelonValue,
     ) -> CubeMelonPluginErrorCode {
         // NULL pointer checks
         if plugin.is_null() || data.is_null() {
@@ -284,7 +284,7 @@ where
         plugin: *const CubeMelonPlugin,
         scope: CubeMelonPluginStateScope,
         key: *const u8,
-        value: *mut *mut CubeMelonValue,
+        value: *mut CubeMelonValue,
     ) -> CubeMelonPluginErrorCode {
         // NULL pointer checks
         if plugin.is_null() || value.is_null() {
@@ -327,7 +327,7 @@ where
     extern "C" fn list_state_keys_wrapper<T: CubeMelonPluginStateInterface + 'static>(
         plugin: *const CubeMelonPlugin,
         scope: CubeMelonPluginStateScope,
-        keys: *mut *mut CubeMelonValue,
+        keys: *mut CubeMelonValue,
     ) -> CubeMelonPluginErrorCode {
         // NULL pointer checks
         if plugin.is_null() || keys.is_null() {
@@ -391,7 +391,7 @@ mod tests {
         fn load_state(
             &self,
             scope: CubeMelonPluginStateScope,
-            _data: &mut *mut CubeMelonValue,
+            _data: &mut CubeMelonValue,
         ) -> CubeMelonPluginErrorCode {
             // Mock implementation for testing
             match scope {
@@ -424,7 +424,7 @@ mod tests {
             &self,
             _scope: CubeMelonPluginStateScope,
             _key: *const u8,
-            _value: &mut *mut CubeMelonValue,
+            _value: &mut CubeMelonValue,
         ) -> CubeMelonPluginErrorCode {
             CubeMelonPluginErrorCode::Success
         }
@@ -442,7 +442,7 @@ mod tests {
         fn list_state_keys(
             &self,
             _scope: CubeMelonPluginStateScope,
-            _keys: &mut *mut CubeMelonValue,
+            _keys: &mut CubeMelonValue,
         ) -> CubeMelonPluginErrorCode {
             CubeMelonPluginErrorCode::Success
         }

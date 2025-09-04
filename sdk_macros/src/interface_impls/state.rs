@@ -150,9 +150,9 @@ fn generate_state_interface_impl(
     Ok(quote! {
         impl ::cubemelon_sdk::interfaces::state::CubeMelonPluginStateInterface for #struct_name {
             fn load_state(
-                &mut self,
+                &self,
                 scope: ::cubemelon_sdk::types::CubeMelonPluginStateScope,
-                data: &mut *mut ::cubemelon_sdk::memory::CubeMelonValue,
+                data: &mut ::cubemelon_sdk::memory::CubeMelonValue,
             ) -> ::cubemelon_sdk::error::CubeMelonPluginErrorCode {
                 self.#load_state_method(scope, data)
             }
@@ -160,7 +160,7 @@ fn generate_state_interface_impl(
             fn save_state(
                 &mut self,
                 scope: ::cubemelon_sdk::types::CubeMelonPluginStateScope,
-                data: *const std::ffi::c_void,
+                data: *const u8,
                 size: usize,
             ) -> ::cubemelon_sdk::error::CubeMelonPluginErrorCode {
                 self.#save_state_method(scope, data, size)
@@ -176,8 +176,8 @@ fn generate_state_interface_impl(
             fn get_state_value(
                 &self,
                 scope: ::cubemelon_sdk::types::CubeMelonPluginStateScope,
-                key: &str,
-                value: &mut *mut ::cubemelon_sdk::memory::CubeMelonValue,
+                key: *const u8,
+                value: &mut ::cubemelon_sdk::memory::CubeMelonValue,
             ) -> ::cubemelon_sdk::error::CubeMelonPluginErrorCode {
                 self.#get_state_value_method(scope, key, value)
             }
@@ -185,8 +185,8 @@ fn generate_state_interface_impl(
             fn set_state_value(
                 &mut self,
                 scope: ::cubemelon_sdk::types::CubeMelonPluginStateScope,
-                key: &str,
-                data: *const std::ffi::c_void,
+                key: *const u8,
+                data: *const u8,
                 size: usize,
             ) -> ::cubemelon_sdk::error::CubeMelonPluginErrorCode {
                 self.#set_state_value_method(scope, key, data, size)
@@ -195,7 +195,7 @@ fn generate_state_interface_impl(
             fn list_state_keys(
                 &self,
                 scope: ::cubemelon_sdk::types::CubeMelonPluginStateScope,
-                keys: &mut *mut ::cubemelon_sdk::memory::CubeMelonValue,
+                keys: &mut ::cubemelon_sdk::memory::CubeMelonValue,
             ) -> ::cubemelon_sdk::error::CubeMelonPluginErrorCode {
                 self.#list_state_keys_method(scope, keys)
             }
@@ -203,7 +203,7 @@ fn generate_state_interface_impl(
             fn clear_state_value(
                 &mut self,
                 scope: ::cubemelon_sdk::types::CubeMelonPluginStateScope,
-                key: &str,
+                key: *const u8,
             ) -> ::cubemelon_sdk::error::CubeMelonPluginErrorCode {
                 self.#clear_state_value_method(scope, key)
             }
@@ -248,9 +248,9 @@ mod tests {
         let input: ItemImpl = parse_quote! {
             impl TestPlugin {
                 pub fn load_state(
-                    &mut self,
+                    &self,
                     scope: CubeMelonPluginStateScope,
-                    data: &mut *mut CubeMelonValue,
+                    data: &mut CubeMelonValue,
                 ) -> CubeMelonPluginErrorCode {
                     CubeMelonPluginErrorCode::Success
                 }
@@ -258,7 +258,7 @@ mod tests {
                 pub fn save_state(
                     &mut self,
                     scope: CubeMelonPluginStateScope,
-                    data: *const std::ffi::c_void,
+                    data: *const u8,
                     size: usize,
                 ) -> CubeMelonPluginErrorCode {
                     CubeMelonPluginErrorCode::Success
@@ -274,8 +274,8 @@ mod tests {
                 pub fn get_state_value(
                     &self,
                     scope: CubeMelonPluginStateScope,
-                    key: &str,
-                    value: &mut *mut CubeMelonValue,
+                    key: *const u8,
+                    value: &mut CubeMelonValue,
                 ) -> CubeMelonPluginErrorCode {
                     CubeMelonPluginErrorCode::Success
                 }
@@ -283,8 +283,8 @@ mod tests {
                 pub fn set_state_value(
                     &mut self,
                     scope: CubeMelonPluginStateScope,
-                    key: &str,
-                    data: *const std::ffi::c_void,
+                    key: *const u8,
+                    data: *const u8,
                     size: usize,
                 ) -> CubeMelonPluginErrorCode {
                     CubeMelonPluginErrorCode::Success
@@ -293,7 +293,7 @@ mod tests {
                 pub fn list_state_keys(
                     &self,
                     scope: CubeMelonPluginStateScope,
-                    keys: &mut *mut CubeMelonValue,
+                    keys: &mut CubeMelonValue,
                 ) -> CubeMelonPluginErrorCode {
                     CubeMelonPluginErrorCode::Success
                 }
@@ -301,7 +301,7 @@ mod tests {
                 pub fn clear_state_value(
                     &mut self,
                     scope: CubeMelonPluginStateScope,
-                    key: &str,
+                    key: *const u8,
                 ) -> CubeMelonPluginErrorCode {
                     CubeMelonPluginErrorCode::Success
                 }
@@ -326,9 +326,9 @@ mod tests {
         let input: ItemImpl = parse_quote! {
             impl TestPlugin {
                 pub fn load_state(
-                    &mut self,
+                    &self,
                     scope: CubeMelonPluginStateScope,
-                    data: &mut *mut CubeMelonValue,
+                    data: &mut CubeMelonValue,
                 ) -> CubeMelonPluginErrorCode {
                     CubeMelonPluginErrorCode::Success
                 }
@@ -346,9 +346,9 @@ mod tests {
         let methods = StateMethods {
             load_state_method: Some(syn::parse_quote! {
                 pub fn load_state(
-                    &mut self,
+                    &self,
                     scope: CubeMelonPluginStateScope,
-                    data: &mut *mut CubeMelonValue,
+                    data: &mut CubeMelonValue,
                 ) -> CubeMelonPluginErrorCode {
                     CubeMelonPluginErrorCode::Success
                 }
@@ -357,7 +357,7 @@ mod tests {
                 pub fn save_state(
                     &mut self,
                     scope: CubeMelonPluginStateScope,
-                    data: *const std::ffi::c_void,
+                    data: *const u8,
                     size: usize,
                 ) -> CubeMelonPluginErrorCode {
                     CubeMelonPluginErrorCode::Success
@@ -375,8 +375,8 @@ mod tests {
                 pub fn get_state_value(
                     &self,
                     scope: CubeMelonPluginStateScope,
-                    key: &str,
-                    value: &mut *mut CubeMelonValue,
+                    key: *const u8,
+                    value: &mut CubeMelonValue,
                 ) -> CubeMelonPluginErrorCode {
                     CubeMelonPluginErrorCode::Success
                 }
@@ -385,8 +385,8 @@ mod tests {
                 pub fn set_state_value(
                     &mut self,
                     scope: CubeMelonPluginStateScope,
-                    key: &str,
-                    data: *const std::ffi::c_void,
+                    key: *const u8,
+                    data: *const u8,
                     size: usize,
                 ) -> CubeMelonPluginErrorCode {
                     CubeMelonPluginErrorCode::Success
@@ -396,7 +396,7 @@ mod tests {
                 pub fn list_state_keys(
                     &self,
                     scope: CubeMelonPluginStateScope,
-                    keys: &mut *mut CubeMelonValue,
+                    keys: &mut CubeMelonValue,
                 ) -> CubeMelonPluginErrorCode {
                     CubeMelonPluginErrorCode::Success
                 }
@@ -405,7 +405,7 @@ mod tests {
                 pub fn clear_state_value(
                     &mut self,
                     scope: CubeMelonPluginStateScope,
-                    key: &str,
+                    key: *const u8,
                 ) -> CubeMelonPluginErrorCode {
                     CubeMelonPluginErrorCode::Success
                 }
