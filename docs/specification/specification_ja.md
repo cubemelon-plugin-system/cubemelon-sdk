@@ -573,6 +573,7 @@ typedef struct {
         const CubeMelonTaskRequest* request,
         CubeMelonTaskResult* result
     );
+
 } CubeMelonSingleTaskInterface;
 ```
 
@@ -599,6 +600,7 @@ typedef struct {
         CubeMelonPlugin* plugin,
         CubeMelonTaskRequest* request
     );
+
 } CubeMelonAsyncTaskInterface;
 ```
 
@@ -662,6 +664,7 @@ typedef struct {
     CubeMelonPluginErrorCode (*reset)(
         CubeMelonPlugin* plugin
     );
+
 } CubeMelonResidentInterface;
 ```
 
@@ -752,6 +755,7 @@ typedef struct {
         CubeMelonPluginStateScope scope,
         const char8_t* key
     );
+
 } CubeMelonPluginStateInterface;
 ```
 
@@ -813,6 +817,7 @@ typedef struct {
         CubeMelonPlugin* plugin,
         CubeMelonTaskRequest* request
     );
+
 } CubeMelonPluginManagerInterface;
 ```
 
@@ -865,6 +870,7 @@ typedef struct {
         const CubeMelonPlugin* plugin,
         CubeMelonValue* supported_formats
     );
+
 } CubeMelonDataInputInterface;
 ```
 
@@ -909,6 +915,7 @@ typedef struct {
         const char8_t* output_format,
         CubeMelonValue* output_data
     );
+
 } CubeMelonDataOutputInterface;
 ```
 
@@ -960,6 +967,7 @@ typedef struct {
         CubeMelonPlugin* plugin,
         int window_id
     );
+
 } CubeMelonWindowInterface;
 ```
 
@@ -993,6 +1001,7 @@ typedef struct {
         CubeMelonPlugin* plugin,
         const char8_t* user_agent
     );
+
 } CubeMelonHttpClientInterface;
 ```
 
@@ -1098,7 +1107,35 @@ your_project/
 
 ### 4.3 使用上の注意事項
 
-#### 4.3.1 プラグインファイルの安全な解放
+#### 4.3.1 プラグインインターフェイスの安全な使用
+
+##### ⚠️重要な警告⚠️
+
+プラグインインターフェイスは、そのインターフェイスを取得したプラグインに対してのみ使用してください。
+
+```c
+// ❌ 危険な使用例
+
+typedef CubeMelonPlugin* (*CREATE_PLUGIN_FN)();
+CREATE_PLUGIN_FN create_plugin;
+
+create_plugin = (CREATE_PLUGIN_FN)dlsym(handle_A, "create_plugin");
+CubeMelonPlugin* plugin_A = create_plugin(); // プラグインA の instance
+
+create_plugin = (CREATE_PLUGIN_FN)dlsym(handle_B, "create_plugin");
+CubeMelonPlugin* plugin_B = create_plugin(); // プラグインB の instance
+
+const CubeMelonInterface* interface_A = NULL;
+get_plugin_interface(PLUGIN_TYPE_XXX, 1, (const void**)&interface_A); // プラグインA の interface
+
+// ❌ これは未定義動作を引き起こします
+interface_A->get_name(plugin_B, LANGUAGE_EN_US); // ❌ plugin_A の interface で plugin_B にアクセス
+
+// ✅ 正しい使用例
+interface_A->get_name(plugin_A, LANGUAGE_EN_US); // ✅ 同じプラグインの interface と instance を使用
+```
+
+#### 4.3.2 プラグインファイルの安全な解放
 
 - ホストはプラグインファイルをアンロードする前に、 `can_unload_now()` 関数を呼び出してアンロード可能かを問い合わせます。
 - プラグインは、まだ生存中のインスタンスがある場合、`false` を返してアンロードを拒否します。
@@ -1144,7 +1181,7 @@ const char8_t* name_2 = interface->get_name(plugin, LANGUAGE_EN_US); // "Plugin 
 // 成功: 0, 失敗: 負の値, 情報: 正の値
 typedef enum {
     // 成功
-    PLUGIN_SUCCESS                       = 0,
+    PLUGIN_SUCCESS = 0,
     
     // 一般的なエラー (-1 ~ -19)
     PLUGIN_ERROR_UNKNOWN                 = -1,   // 不明なエラー
