@@ -34,14 +34,14 @@ impl Plugin {
     }
 
     pub fn get_name(&self, language: CubeMelonLanguage) -> *const u8 {
-        multilang_map!(language, "Plugin", {
-            "ja-JP" => "プラグイン",
+        multilang_map!(language, "Single Task Plugin", {
+            "ja-JP" => "単発実行プラグイン",
         })
     }
 
     pub fn get_description(&self, language: CubeMelonLanguage) -> *const u8 {
-        multilang_map!(language, "Plugin Description", {
-            "ja-JP" => "プラグインの説明",
+        multilang_map!(language, "Plugin for single task execution test", {
+            "ja-JP" => "単発実行プラグインのテストです",
         })
     }
 
@@ -59,6 +59,72 @@ impl Plugin {
 
         self.initialized = true;
         self.log_message(CubeMelonLogLevel::Info, "Plugin initialized.");
+
+        // Try acquiring host Manager interface and call a simple method
+        if let Some(services) = &self.host_services {
+            unsafe {
+                if let Some(get_iface) = services.get_host_interface {
+                    let mut host_plugin: *const CubeMelonPlugin = std::ptr::null();
+                    let mut iface_ptr: *const std::ffi::c_void = std::ptr::null();
+                    let ec = get_iface(
+                        CubeMelonPluginType::Manager,
+                        1,
+                        &mut host_plugin as *mut *const CubeMelonPlugin,
+                        &mut iface_ptr as *mut *const std::ffi::c_void,
+                    );
+                    if ec == CubeMelonPluginErrorCode::Success && !host_plugin.is_null() && !iface_ptr.is_null() {
+                        let vtbl = &*(iface_ptr as *const cubemelon_sdk::interfaces::CubeMelonPluginManagerInterfaceImpl);
+                        let mut infos = CubeMelonPluginBasicInfoArray::empty();
+                        let lang = services.get_system_language();
+                        let ec2 = (vtbl.get_all_plugins_basic_info)(host_plugin, lang, &mut infos as *mut _);
+                        if ec2 == CubeMelonPluginErrorCode::Success {
+                            let count = infos.count;
+                            self.log_message(CubeMelonLogLevel::Info, &format!("Host Manager.get_all_plugins_basic_info: {} items", count));
+                            if let Some(free_fn) = infos.free_info_array {
+                                free_fn(infos.infos, infos.count);
+                            }
+                        } else {
+                            self.log_message(CubeMelonLogLevel::Warn, &format!("Manager.get_all_plugins_basic_info failed: {:?}", ec2));
+                        }
+                    } else {
+                        self.log_message(CubeMelonLogLevel::Warn, &format!("get_host_interface(Manager) failed: {:?}", ec));
+                    }
+                } else {
+                    self.log_message(CubeMelonLogLevel::Warn, "Host does not provide get_host_interface");
+                }
+            }
+        }
+
+        // Try acquiring host State interface and call a simple method
+        if let Some(services) = &self.host_services {
+            unsafe {
+                if let Some(get_iface) = services.get_host_interface {
+                    let mut host_plugin: *const CubeMelonPlugin = std::ptr::null();
+                    let mut iface_ptr: *const std::ffi::c_void = std::ptr::null();
+                    let ec = get_iface(
+                        CubeMelonPluginType::State,
+                        1,
+                        &mut host_plugin as *mut *const CubeMelonPlugin,
+                        &mut iface_ptr as *mut *const std::ffi::c_void,
+                    );
+                    if ec == CubeMelonPluginErrorCode::Success && !host_plugin.is_null() && !iface_ptr.is_null() {
+                        let vtbl = &*(iface_ptr as *const cubemelon_sdk::interfaces::CubeMelonPluginStateInterfaceImpl);
+                        let fmt_ptr = (vtbl.get_format_name)(host_plugin, CubeMelonPluginStateScope::Host);
+                        if !fmt_ptr.is_null() {
+                            let fmt = std::ffi::CStr::from_ptr(fmt_ptr as *const i8).to_string_lossy().to_string();
+                            self.log_message(CubeMelonLogLevel::Info, &format!("Host State.get_format_name: {}", fmt));
+                        } else {
+                            self.log_message(CubeMelonLogLevel::Warn, "Host State.get_format_name returned null");
+                        }
+                    } else {
+                        self.log_message(CubeMelonLogLevel::Warn, &format!("get_host_interface(State) failed: {:?}", ec));
+                    }
+                }
+            }
+        }
+
+        // NOTE: Do not call Manager.execute_task() from initialize.
+        // It creates a new plugin instance and re-enters initialize(), causing recursion.
 
         Ok(())
     }

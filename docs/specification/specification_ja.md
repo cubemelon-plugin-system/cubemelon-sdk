@@ -508,7 +508,7 @@ typedef struct {
 typedef struct {
     bool initialized;
     // その他のデータ...
-} PluginData;
+} MyPluginData;
 ```
 - 初期化時
 ```c
@@ -520,7 +520,7 @@ CubeMelonPluginErrorCode initialize(
         return PLUGIN_ERROR_NULL_POINTER;
     }
     
-    PluginData* data = (PluginData*)plugin;
+    MyPluginData* data = (MyPluginData*)plugin;
     if (data->initialized) {
         // 既に初期化されている場合は何もせず制御を返す
         return PLUGIN_ERROR_ALREADY_INITIALIZED;
@@ -1686,10 +1686,10 @@ typedef struct {
 
 ```c
 // 基本インターフェイスの初期化メソッド
-bool (*initialize)(CubeMelonPlugin* plugin, 
-                   const CubeMelonPlugin* host_plugin,
-                   const CubeMelonPluginManagerInterface* host_interface,
-                   const CubeMelonHostServices* host_services); // ホストサービスへのアクセスポイント
+CubeMelonPluginErrorCode (*initialize)(
+    CubeMelonPlugin* plugin, 
+    const CubeMelonHostServices* host_services // ホストサービスへのアクセスポイント
+);
 ```
 
 ### 12.4 使用例
@@ -1704,15 +1704,17 @@ typedef struct {
 } MyPluginData;
 
 // 初期化時にサービスを保存
-CubeMelonPluginErrorCode my_plugin_initialize(CubeMelonPlugin* plugin, 
-                          const CubeMelonPlugin* host,
-                          const CubeMelonPluginManagerInterface* host_interface,
-                          const CubeMelonHostServices* host_services) {
-    MyPluginData* data = get_plugin_data(plugin);
-    if (data)
-    {
-        data->host_services = host_services;
+CubeMelonPluginErrorCode my_plugin_initialize(
+    CubeMelonPlugin* plugin, 
+    const CubeMelonHostServices* host_services
+) {
+    if (plugin == NULL) {
+        return PLUGIN_ERROR_NULL_POINTER;
     }
+    
+    MyPluginData* data = (MyPluginData*)plugin;
+    data->host_services = host_services;
+
     
     // 初期化完了をログ出力
     if (host_services)
@@ -1764,9 +1766,7 @@ impl MyPlugin {
 
     pub fn initialize(
         &mut self,
-        _host_plugin: Option<&CubeMelonPlugin>,
-        _host_interface: Option<&CubeMelonInterface>,
-        host_services: Option<&CubeMelonHostServices>,
+        host_services: Option<&CubeMelonHostServices>
     ) -> Result<(), CubeMelonPluginErrorCode> {
         if let Some(services) = host_services {
             self.host_services = Some(*services);
