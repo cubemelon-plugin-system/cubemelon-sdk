@@ -18,7 +18,7 @@ use cubemelon_sdk::CubeMelonPluginManagerInterface; // bring trait methods (exec
 
 mod host_services;
 use host_services::{
-    runtime_log, language_to_string, get_system_language_callback, plugin_log_callback,
+    runtime_log, get_system_language_callback, plugin_log_callback,
 };
 
 mod manager;
@@ -151,7 +151,7 @@ impl RuntimeData {
             let sys = unsafe { get_system_language_callback() };
             runtime_log(
                 CubeMelonLogLevel::Info,
-                &format!("Using system language: {}", language_to_string(&sys)),
+                &format!("Using system language: {}", sys.as_str()),
             );
             sys
         };
@@ -479,7 +479,7 @@ fn main() -> Result<()> {
         CubeMelonLogLevel::Info,
         &format!(
             "Effective language: {}",
-            language_to_string(&runtime.system_language)
+            runtime.system_language.as_str()
         ),
     );
     

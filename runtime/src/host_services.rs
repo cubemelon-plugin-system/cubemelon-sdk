@@ -22,18 +22,6 @@ pub fn runtime_log(level: CubeMelonLogLevel, message: &str) {
     println!("{}> [{}] Runtime: {}", timestamp, level, message);
 }
 
-/// Helper function to convert CubeMelonLanguage to readable string
-pub fn language_to_string(lang: &CubeMelonLanguage) -> String {
-    if lang.code.is_null() {
-        return "Unknown".to_string();
-    }
-    
-    match unsafe { std::ffi::CStr::from_ptr(lang.code as *const i8) }.to_str() {
-        Ok(code) => code.trim_end_matches('\0').to_string(),
-        Err(_) => "Invalid".to_string(),
-    }
-}
-
 /// System language callback function
 /// This function returns the system language setting
 pub unsafe extern "C" fn get_system_language_callback() -> CubeMelonLanguage {

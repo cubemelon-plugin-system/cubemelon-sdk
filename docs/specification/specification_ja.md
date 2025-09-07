@@ -1,6 +1,6 @@
 # CubeMelon プラグインシステム 仕様書
 <div style="text-align: right;">
-2025/09/04<br>
+2025/09/07<br>
 PLUGIN_SDK_VERSION 0.11.3
 </div>
 
@@ -1339,7 +1339,7 @@ if (interface->some_function_returning_string(plugin, &string) == PLUGIN_SUCCESS
 
 // バッファを返す場合
 CubeMelonValue value;
-if (interface->some_function_returning_buffer(plugin, &value) == PLUGIN_SUCCESS) {
+if (interface->some_function_returning_value(plugin, &value) == PLUGIN_SUCCESS) {
     // データを使用
     process_data(value.buffer.data, value.buffer.size);
 
