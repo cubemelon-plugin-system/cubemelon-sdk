@@ -1007,7 +1007,7 @@ typedef struct {
 
 #### 3.4.2 さらなる拡張インターフェイス
 
-さらなる拡張インターフェイスについては、APIドキュメントをお読みください。
+さらなる拡張インターフェイスについては、APIリファレンスをお読みください。
 
 [目次に戻る](#目次)
 
@@ -1333,7 +1333,8 @@ if (interface->some_function_returning_string(plugin, &string) == PLUGIN_SUCCESS
     if (string.free_string != NULL)
     {
         string.free_string(string.str);
-        string.str = NULL; // 必ず NULL でクリアする
+        string.str         = NULL; // 必ず NULL でクリアする
+        string.free_string = NULL; // 必ず NULL でクリアする
     }
 }
 
@@ -1427,7 +1428,7 @@ impl MyPlugin {
 }
 
 #[plugin_interface(basic)]
-impl SimplePlugin {}
+impl MyPlugin {}
 ```
 
 ### 9.2 単発実行プラグイン
@@ -1491,7 +1492,7 @@ impl MyPlugin {
 }
 
 #[plugin_interface(single_task)]
-impl Plugin {}
+impl MyPlugin {}
 ```
 
 [目次に戻る](#目次)
@@ -1612,7 +1613,7 @@ impl MySimpleManager {
 }
 
 #[plugin_interface(manager)]
-impl Plugin {}
+impl MySimpleManager {}
 ```
 
 [目次に戻る](#目次)
@@ -1714,7 +1715,6 @@ CubeMelonPluginErrorCode my_plugin_initialize(
     
     MyPluginData* data = (MyPluginData*)plugin;
     data->host_services = host_services;
-
     
     // 初期化完了をログ出力
     if (host_services)
@@ -1791,8 +1791,7 @@ impl MyPlugin {
 }
 
 #[plugin_interface(single_task)]
-impl Plugin {}
-
+impl MyPlugin {}
 ```
 
 ### 12.5 ログの利点
@@ -1868,7 +1867,7 @@ impl MyPlugin {
 }
 
 #[plugin_interface(basic)]
-impl Plugin {}
+impl MyPlugin {}
 
 // マクロが以下を自動生成:
 // - create_plugin() / destroy_plugin()
@@ -1950,7 +1949,7 @@ https://github.com/cubemelon-plugin-system
 ---
 
 ## ライセンス
-この文書のライセンスは The MIT License とします。
+この文書のライセンスは **The MIT License** とします。
 <https://opensource.org/license/mit>
 
 > Copyright© 2025 tapetums
