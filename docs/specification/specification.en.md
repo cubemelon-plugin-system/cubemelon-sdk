@@ -2,7 +2,7 @@
 2025/09/07
 PLUGIN_SDK_VERSION 0.11.3
 
-![img](../../img/lang.ja.png)[ JAPANESE](specification.ja.md)
+![img](../../img/lang.ja.png)[ 日本語](specification.ja.md)
 
 ---
 

@@ -34,7 +34,7 @@ https://git-scm.com/
 
 ```bash
 # Clone this repository
-$ git clone https://github.com/cubemelon-plugin-system/cubemelon-sdk
+$ git clone https://github.com/cubemelon-plugin-system/cubemelon-sdk.git
 ```
 
 ---

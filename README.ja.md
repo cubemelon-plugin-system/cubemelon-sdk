@@ -1,11 +1,11 @@
 # CubeMelon Plugin System
 An interactive plugin system designed for multiple languages v0.11.3
 
-![img](img/lang.en.png)[ ENGLISH](README.md)
-
 ![CubeMelon Logo](img/cubemelon.svg)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+![img](img/lang.en.png)[ ENGLISH](README.md)
 
 ---
 

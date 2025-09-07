@@ -1,7 +1,7 @@
 # Getting Started
 CubeMelon Plugin System v0.11.3
 
-![img](../img/lang.ja.png)[ JAPANESE](getting_started.ja.md)
+![img](../img/lang.ja.png)[ 日本語](getting_started.ja.md)
 ## Table of Contents
 
 1. [Environment Setup](#1-environment-setup)
@@ -33,7 +33,7 @@ In any folder, execute the following git command:
 
 ```bash
 # Clone this repository
-$ git clone https://github.com/cubemelon-plugin-system/cubemelon-sdk
+$ git clone https://github.com/cubemelon-plugin-system/cubemelon-sdk.git
 ```
 
 ---
