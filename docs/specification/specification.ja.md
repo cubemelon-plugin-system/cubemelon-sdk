@@ -1,8 +1,8 @@
 # CubeMelon プラグインシステム 仕様書
-<div style="text-align: right;">
-2025/09/07<br>
+2025/09/07
 PLUGIN_SDK_VERSION 0.11.3
-</div>
+
+![img](../../img/lang.en.png)[ ENGLISH](specification.en.md)
 
 ---
 

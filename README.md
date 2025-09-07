@@ -1,103 +1,64 @@
 # CubeMelon Plugin System
-An interactive plugin system designed for multiple languages
+An interactive plugin system designed for multiple languages v0.11.3
 
-<div align="center">
-    <img src="img/cubemelon.svg" height="256px">
-</div>
+![img](img/lang.ja.png)[ JAPANESE](README.ja.md)
 
----
+![CubeMelon Logo](img/cubemelon.svg)
 
-## プロジェクト概要
-
-`CubeMelon Plugin System` は、アプリケーションの機能を簡単に拡張できるプラグインシステムです。
-さまざまなプログラミング言語でプラグインを作ることができますが、Rust SDK を使うことで特に簡単に開発できます。
-作成したプラグイン同士は連携して動作させることができるほか、多言語に対応したアプリケーションを作ることが可能です。
-最初は小さなアプリから始めて、必要に応じて機能をどんどん追加していけるのが特長です。
-
-### ✨ どんなことができるのか
-
-🍉 **簡単にプラグインが作れる**
-- Rust なら最小十数行のコードでプラグインが完成
-- 難しいメモリ管理は自動で処理
-- エラー処理も自動で安全
-
-🍉 **プラグイン同士が連携可能**
-- 「画像を読み込む」プラグイン ＋ 「サイズを変更する」プラグイン = 画像リサイズ機能
-- あとから新しいプラグインを追加するだけで機能アップ
-
-🍉 **国際化対応**
-- 日本語、英語、中国語など、多言語に対応可能
-- UTF-8 ベースで文字化けの心配なし
-
-🍉 **様々な言語で開発可能**
-- Rust、C、C++、Go、Zigなど
-- チームの得意な言語を使える
-- C ABI で設計されている
-
-### 🎯 こんな方におすすめ
-
-- プログラミングを学んでいる方: 実践的なプラグイン開発を体験したい
-- 小さなツールから始めたい方: シンプルなアプリを段階的に成長させたい
-- Rustに興味がある方: 難しい部分はシステムにお任せして、楽しい部分に集中したい
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
 
-## クイックスタート
+## Project Overview
 
-### 1. 環境構築
+The `CubeMelon Plugin System` is a plugin system that makes it easy to extend application functionality.
+While you can create plugins in various programming languages, using the Rust SDK makes development especially straightforward.
+Created plugins can work together collaboratively, and you can build applications that support multiple languages.
+The key feature is starting with small apps and gradually adding functionality as needed.
 
-#### 1.1 Windows SDK のインストール (Windows の場合)
-以下のサイトから SDK を探してダウンロード
-https://developer.microsoft.com/windows/downloads/windows-sdk/
+### ✨ What Can You Do?
 
+🍉 **Easy Plugin Creation**
+- With Rust, plugins can be completed in just a few dozen lines of code
+- Complex memory management is handled automatically
+- Error handling is also automatic and safe
 
-#### 1.2 Rust のインストール
-以下のサイトからインストーラをダウンロード
-https://www.rust-lang.org/
+🍉 **Plugin Collaboration**
+- "Image Loading" plugin + "Image Resizing" plugin = Image resize functionality
+- Simply add new plugins later to enhance functionality
 
-#### 1.3 Git のインストール
-以下のサイトからインストーラをダウンロード
-https://git-scm.com/
+🍉 **Internationalization Support**
+- Support for multiple languages including Japanese, English, Chinese, and more
+- UTF-8 based with no character encoding worries
 
-#### 1.4 CubeMelon SDK のダウンロード
+🍉 **Development in Various Languages**
+- Rust, C, C++, Go, Zig, and more
+- Use your team's preferred language
+- Designed with C ABI
 
-任意のフォルダ内で、以下の git コマンドを実行してください。
+### 🎯 Recommended For
 
-```bash
-# Clone this repository
-$ git clone https://github.com/cubemelon-plugin-system/cubemelon-sdk
-```
+- **Programming learners**: Want to experience practical plugin development
+- **Those starting with small tools**: Want to grow simple apps step by step
+- **Those interested in Rust**: Want to focus on the fun parts while letting the system handle the difficult aspects
 
-### 2. プロジェクトの作成
+---
 
-任意のフォルダ内で、以下のコマンドを実行してください。
+## Table of Contents
 
-```bash
-$ cargo new my_plugin --lib
-$ cd my_plugin
-$ touch src/lib.rs
-```
+1. [Quick Start](#quick-start)
+2. [Architecture Overview](#architecture-overview)
+3. [Plugin Types](#plugin-types)
+4. [Plugin Development Guide](#plugin-development-guide)
+5. [Documentation](#documentation)
+6. [Contributing](#contributing)
+7. [License](#license)
 
-### 3. TOML ファイルへの追記
+---
 
-`"../cubemelon-sdk/sdk"` の部分は、プロジェクトフォルダの位置関係によって変わります。
-
-```toml
-# Cargo.toml
-[lib]
-crate-type = ["cdylib"]
-
-[dependencies]
-cubemelon_sdk = { path = "../cubemelon-sdk/sdk" }
-```
-
-### 4. 最小限のプラグイン実装
-
-`UUID` は、プロジェクトに固有の値を使ってください。
-オンラインジェネレータなどで簡単に作成できます。
+## Quick Start
 
 ```rust
-// src/lib.rs
 use cubemelon_sdk::prelude::*;
 
 #[plugin]
@@ -116,92 +77,28 @@ impl MyPlugin {
 impl MyPlugin {}
 ```
 
-### 5. 実際に動かしてみる
+### [Getting Started](docs/getting_started.en.md) is here
 
-#### 1. まずはプラグインをビルドします。
-
-```bash
-# my_plugin/
-$ cargo build --release
-```
-
-`my_plugin/target/release` 内にファイルが作られます。
-
-拡張子は
-- Window なら **.dll**
-- Linux なら **.so**
-- macOS なら **.dylib**
-
-になります。
-
-#### 2. cubemelon-sdk フォルダに移動し、SDK 全体をビルドします。
-
-```bash
-# cubemelon-sdk/
-$ cargo build --release
-```
-
-#### 3. 先程作ったプラグインを、SDK 内の plugins フォルダの中にコピーします。
-
-```bash
-# cubemelon-sdk/
-$ cd target/release
-$ mkdir plugins
-$ cp "my_plugin.dll" plugins
-```
-
-`"my_plugin.dll"` の箇所は、実際に作成されたプラグインファイルのフルパスを入れてください。
-図で示すと以下のようになります。
-
-```
-├── ...
-my_plugin/
-├── Cargo.toml
-├── src/
-│　　　└──lib.rs
-├── target/
-│　　　└── release/
-│　　　　　　　└── my_plugin.dll　←　これを
-cubemelon-sdk/
-├── Cargo.toml
-├── ...
-├── target/
-│　　　└── release/
-│　　　　　　　├── plugins/
-│　　　　　　　│　　　└── my_plugin.dll　←　ここにコピー
-│　　　　　　　├── cubemelon.exe
-│　　　　　　　└ ...
-└── ...
-```
-
-#### 4. アプリケーションを起動し、動作のテストを行います。
-
-```bash
-# cubemelon-sdk/target/release/
-$ ./cubemelon
-```
-
-`./cubemelon` は、SDK に含まれている動作確認用のコマンドラインアプリケーションです。
-Windows の場合は `cubemelon.exe` が、それ以外の OS では `cubemelon` がアプリの実体です。
+[Back to Table of Contents](#table-of-contents)
 
 ---
 
-## アーキテクチャの概要
+## Architecture Overview
 
-### 1. システム全体の階層構造
+### 1. System-wide Hierarchical Structure
 
-プラグインはホストアプリケーションを頂点として、階層構造を持つことができます。
+Plugins can form a hierarchical structure with the host application at the top.
 
 ```mermaid
   graph TD
-      Host[🏠 ホストアプリケーション<br/>CubeMelon Runtime] --> Manager[🔧
-  管理プラグイン<br/>Plugin Manager]
+      Host[🏠 Host Application<br/>CubeMelon Runtime] --> Manager[🔧
+  Management Plugin<br/>Plugin Manager]
 
-      Manager --> P1[🌐 HTTPクライアント<br/>プラグイン]
-      Manager --> P2[🖼️ 画像処理<br/>プラグイン]
-      Manager --> P3[🔒 暗号化<br/>プラグイン]
-      Manager --> P4[💾 データベース<br/>プラグイン]
-      Manager --> P5[📁 ファイル操作<br/>プラグイン]
+      Manager --> P1[🌐 HTTP Client<br/>Plugin]
+      Manager --> P2[🖼️ Image Processing<br/>Plugin]
+      Manager --> P3[🔒 Encryption<br/>Plugin]
+      Manager --> P4[💾 Database<br/>Plugin]
+      Manager --> P5[📁 File Operation<br/>Plugin]
 
       classDef hostStyle fill:#e1f5fe,stroke:#01579b,stroke-width:3px
       classDef managerStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
@@ -212,182 +109,239 @@ Windows の場合は `cubemelon.exe` が、それ以外の OS では `cubemelon`
       class P1,P2,P3,P4,P5 pluginStyle
 ```
 
-### 2. プラグイン間の相互連携
+### 2. Inter-Plugin Collaboration
 
-プラグインは親プラグインとは直接、また兄弟プラグインとは親プラグインを介して相互に連携することができます。
+Plugins can collaborate directly with parent plugins and with sibling plugins through the parent plugin.
 
 ```mermaid
   sequenceDiagram
-      participant App as 📱 アプリケーション
-      participant Mgr as 🔧 管理プラグイン
-      participant HTTP as 🌐 HTTPプラグイン
-      participant Crypto as 🔒 暗号化プラグイン
-      participant DB as 💾 DBプラグイン
+      participant App as 📱 Application
+      participant Mgr as 🔧 Management Plugin
+      participant HTTP as 🌐 HTTP Plugin
+      participant Crypto as 🔒 Encryption Plugin
+      participant DB as 💾 DB Plugin
 
-      Note over App,DB: ユーザーが「暗号化してWebにアップロード」を実行
+      Note over App,DB: User executes "Encrypt and Upload to Web"
 
-      App->>Mgr: タスク依頼「暗号化してアップロード」
-      Mgr->>Crypto: データ暗号化を依頼
-      Crypto-->>Mgr: 暗号化完了
-      Mgr->>HTTP: 暗号化データをWebにPOST
-      HTTP-->>Mgr: アップロード完了
-      Mgr->>DB: 結果をデータベースに保存
-      DB-->>Mgr: 保存完了
-      Mgr-->>App: 全体完了を通知
+      App->>Mgr: Task request "Encrypt and upload"
+      Mgr->>Crypto: Request data encryption
+      Crypto-->>Mgr: Encryption complete
+      Mgr->>HTTP: POST encrypted data to web
+      HTTP-->>Mgr: Upload complete
+      Mgr->>DB: Save result to database
+      DB-->>Mgr: Save complete
+      Mgr-->>App: Notify overall completion
 ```
 
-### 3. インターフェイス別の機能分類
+### 3. Feature Classification by Interface
 
-プラグインインターフェイスは最大64種類用意されており、基本機能を始めネットワーク通信やメディア処理、データベース操作に至るまで様々な用途に対応します。
+Up to 63 plugin interfaces are available, supporting various use cases from basic functionality to network communication, media processing, and database operations.
 
 ```mermaid
   mindmap
     root((CubeMelon<br/>Plugin System))
-      基本機能
-        単発実行
-        非同期実行
-        常駐実行
-        状態管理
-      データ処理
-        入力処理
-        出力処理
-        変換処理
-      ユーザーIF
-        ウィンドウ操作
-        イベント処理
-      ネットワーク
-        HTTP通信
-        TCP/UDP通信
+      Core Features
+        Single Task
+        Async Task
+        Resident
+        State Management
+      Data Processing
+        Input Processing
+        Output Processing
+        Format Conversion
+      User Interface
+        Window Operations
+        Event Handling
+      Network
+        HTTP Communication
+        TCP/UDP Communication
         WebSocket
-      メディア
-        画像処理
-        音声処理
-        動画処理
-      その他
-        ファイルシステム
-        データベース
-        暗号化
+      Media
+        Image Processing
+        Audio Processing
+        Video Processing
+      Others
+        File System
+        Database
+        Encryption
 ```
 
-詳しくは[仕様書](docs/specification/specification_ja.md)を御覧ください。
+For more details, see the [Specification](docs/specification/specification.en.md).
+
+[Back to Table of Contents](#table-of-contents)
 
 ---
 
-## プラグイン開発ガイド
+## Plugin Types
 
-### 💭 どんなプラグインを作りたい？
+### 🔌 Up to 63 Types
 
-プラグイン開発は「何をしたいか？」を決めることから始まります。
-CubeMelon　では段階的に機能を追加していけるので、まずは簡単なものから始めましょう。
+- Core Features
+  - Basic
 
-### 📝 プラグインタイプの選び方
+- Standard Features
+  - Single Task (Sync)
+  - Single Task (Async)
+  - Resident Auto-execution
+  - State Management
+  - Plugin Management
+  - Data Input
+  - Data Output
+  - Window Operations
 
-🍉 **「何かの処理を1回だけ実行したい」**
-- **基本プラグイン** または **単発実行プラグイン**
-- 例：ファイルを変換する、計算する、データを整理する
+- Extended Features (Planned)
+  - Image Processing
+  - Audio Processing
+  - Video Processing
+  - Local File System Operations
+  - Database Operations
+  - Encryption Processing
+  - HTTP/HTTPS Client
+  - HTTP/HTTPS Server
+  - TCP Client
+  - TCP Server
+  - UDP Communication
+  - WebSocket Communication
+  - File Sharing (SMB, AFP, NFS, etc.)
+  - Service Discovery (Bonjour, UPnP, etc.)
+  - Streaming (RTP, WebRTC, etc.)
+  - Messaging (MQTT, AMQP, etc.)
+  - Blockchain Communication
+  - IoT Protocols (CoAP, etc.)
 
-🍉 **「バックグラウンドで動き続けたい」**
-- **常駐プラグイン**
-- 例：ファイル監視、定期的なデータ取得、サーバー機能
+- User-Defined
+  - Others
+  - ...
 
-🍉 **「時間のかかる処理を非同期で実行したい」**
-- **非同期プラグイン**
-- 例：大きなファイルのダウンロード、画像の一括処理
+For more details, see the [Specification](docs/specification/specification.en.md).
 
-🍉 **「設定や状態を保存したい」**
-- **状態管理プラグイン**
-- 例：ユーザー設定、履歴、キャッシュ
+[Back to Table of Contents](#table-of-contents)
 
-### 🚀 開発の流れ（3ステップ）
+---
 
-#### ステップ1：まずは基本プラグインから
+## Plugin Development Guide
+
+### 💭 What Kind of Plugin Do You Want to Create?
+
+Plugin development starts with deciding "what do you want to do?"
+With the `CubeMelon Plugin System`, you can add functionality incrementally, so let's start with something simple.
+
+### 📝 How to Choose Plugin Types
+
+🍉 **"Want to execute some process just once?"**
+- **Basic Plugin** or **Single Task Plugin**
+- Examples: Convert files, perform calculations, organize data
+
+🍉 **"Want to keep running in the background?"**
+- **Resident Plugin**
+- Examples: File monitoring, periodic data retrieval, server functionality
+
+🍉 **"Want to execute time-consuming processes asynchronously?"**
+- **Async Plugin**
+- Examples: Large file downloads, bulk image processing
+
+🍉 **"Want to save settings or state?"**
+- **State Management Plugin**
+- Examples: User settings, history, cache
+
+### 🚀 Development Flow (3 Steps)
+
+#### Step 1: Start with a Basic Plugin
 
 ```rust
-// 最初はこれだけ
+// Start with just this
 #[plugin]
 pub struct MyPlugin {}
 
 #[plugin_impl]
 impl MyPlugin {
     pub fn new() -> Self { Self {} }
-    // 基本情報の設定...
+    // Basic information setup...
 }
 ```
 
-#### ステップ2：機能を追加する
+#### Step 2: Add Functionality
 
 ```rust
-// 単発実行機能を追加
+// Add single task functionality
 #[single_task_plugin_impl]
 impl MyPlugin {
     pub fn execute(&mut self, request: &TaskRequest, result: &mut TaskResult) {
-        // ここに処理を書く
+        // Write your processing here
     }
 }
 ```
 
-#### ステップ3：さらに機能を組み合わせる
+#### Step 3: Combine Even More Features
 
 ```rust
-// 状態管理も追加
+// Add state management too
 #[state_plugin_impl]
 impl MyPlugin {
     pub fn save_state(&mut self, data: &[u8]) {
-        // 設定を保存
+        // Save settings
     }
 }
 ```
 
-### 🛠️ 実際の開発例
+### 🛠️ Real Development Example
 
-「画像のファイル名を一括変更するプラグイン」を作る場合
+When creating a "batch image filename changer plugin":
 
-1. 企画: ファイル名を変更したい → 単発実行プラグインが良さそう
-2. 基本実装: まずは1つのファイルだけ処理
-3. 機能拡張: 複数ファイル対応、エラーハンドリング追加
-4. 応用: 設定保存機能を追加して、よく使うパターンを記憶
+1. Planning: Want to change filenames → Single task plugin seems good
+2. Basic implementation: Process just one file first
+3. Feature expansion: Add multiple file support, error handling
+4. Application: Add settings save functionality to remember frequently used patterns
 
-### ✨ 段階的実装の魅力
+### ✨ Benefits of Incremental Implementation
 
-- 最初: 「Hello World」レベルから始められる
-- 慣れてきたら: 他のプラグインと連携させる
-- 上級者になったら: 複数のインターフェイスを組み合わせて高機能なプラグインに
+- **Initially**: Start from "Hello World" level
+- **As you get comfortable**: Make plugins collaborate with others
+- **When you become advanced**: Combine multiple interfaces for highly functional plugins
 
-### 💡 開発のコツ
+### 💡 Development Tips
 
-- 小さく始める: 最初から完璧を目指さない
-- 段階的に追加: 動くものから少しずつ機能を足す
-- 既存プラグインを参考に: plugins/フォルダのサンプルを見てみる
-- コミュニティを活用: 困ったときは気軽に質問
-  
+- **Start small**: Don't aim for perfection from the beginning
+- **Add incrementally**: Add features bit by bit from something that works
+- **Reference existing plugins**: Look at samples in the plugins/ folder
+- **Use the community**: Feel free to ask questions when stuck
+
+[Back to Table of Contents](#table-of-contents)
+
   ---
 
-## ドキュメント
+## Documentation
 
-### 👷‍♂️作成中👷‍♀️
+### 👷‍♂️Under Construction👷‍♀️
 
-APIリファレンスは後日公開予定
+[Specification](docs/specification/specification.en.md) is here
 
-[仕様書](docs/specification/specification_ja.md)はこちら
+API Reference will be published later
 
----
-
-## 開発・貢献
-
-`CubeMelon Plugin System` では、一緒に開発してくださる方を募集します。
-まだまだ未実装の機能について、ご協力いただける方をお待ちしています。
+[Back to Table of Contents](#table-of-contents)
 
 ---
 
-## ライセンス
+## Contributing
+
+The `CubeMelon Plugin System` is looking for contributors to develop together.
+We welcome anyone who can help with the many features that are still unimplemented.
+
+[Back to Table of Contents](#table-of-contents)
+
+---
+
+## License
 
 **The MIT License**
 <https://opensource.org/license/mit>
 
 > Copyright© 2025 tapetums
 > 
-> Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+> Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 > 
 > The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 > 
-> THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+[Back to Top](#cubemelon-plugin-system)
